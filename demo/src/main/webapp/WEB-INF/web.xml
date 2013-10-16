@@ -1,0 +1,20 @@
+<!DOCTYPE web-app PUBLIC
+        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+    <display-name>Prerender java demo page</display-name>
+    <filter>
+        <filter-name>prerender</filter-name>
+        <filter-class>com.github.greengerong.PreRenderSEOFilter</filter-class>
+        <init-param>
+            <param-name>prerenderServiceUrl</param-name>
+            <param-value>http://localhost:3000</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>prerender</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+</web-app>

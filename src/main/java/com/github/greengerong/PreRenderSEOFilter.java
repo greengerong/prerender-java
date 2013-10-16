@@ -7,6 +7,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import static com.google.common.collect.FluentIterable.from;
 
 public class PreRenderSEOFilter implements Filter {
 
+    private static final Logger logger = Logger.getLogger(PreRenderSEOFilter.class);
     private FilterConfig filterConfig;
 
     @Override
@@ -31,11 +33,11 @@ public class PreRenderSEOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-
         try {
             final HttpServletRequest request = (HttpServletRequest) servletRequest;
             if (shouldShowPrerenderedPage(request)) {
                 final ResponseResult result = getPrerenderedPageResponse(request);
+                logger.info(String.format("Prerender server response:code = %d; body = %s", result.getStatusCode(), result.getResponseBody()));
                 if (result.getStatusCode() == 200) {
                     final PrintWriter writer = servletResponse.getWriter();
                     writer.write(result.getResponseBody());
@@ -43,16 +45,15 @@ public class PreRenderSEOFilter implements Filter {
                     return;
                 }
             }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            logger.error("Some error about prerender.", e);
         }
-
         filterChain.doFilter(servletRequest, servletResponse);
-
     }
 
     private ResponseResult getPrerenderedPageResponse(HttpServletRequest request) throws IOException {
-        final String apiUrl = getApiUrl(request.getRequestURI());
+        final String apiUrl = getApiUrl(getFullUrl(request));
+        logger.info(String.format("SEO request %s .......", apiUrl));
         final HttpClient httpClient = new HttpClient();
         final GetMethod getMethod = new GetMethod(apiUrl);
         setConfig(httpClient);
@@ -60,6 +61,16 @@ public class PreRenderSEOFilter implements Filter {
         final int code = httpClient.executeMethod(getMethod);
         String body = new String(getMethod.getResponseBodyAsString().getBytes("utf-8"));
         return new ResponseResult(code, body);
+    }
+
+    private String getFullUrl(HttpServletRequest request) {
+        final StringBuffer url = request.getRequestURL();
+        final String queryString = request.getQueryString();
+        if (queryString != null) {
+            url.append('?');
+            url.append(queryString);
+        }
+        return url.toString();
     }
 
     private void setHttpHeader(HttpMethod httpMethod) {
@@ -122,19 +133,21 @@ public class PreRenderSEOFilter implements Filter {
 
     private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
         final String useAgent = request.getHeader("User-Agent");
-        final String url = request.getRequestURI();
+        final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
+
+        if (hasEscapedFragment(request)) {
+            return true;
+        }
 
         if (StringUtils.isBlank(useAgent)) {
             return false;
         }
 
-        if (hasEscapedFragment(request)) {
-            return true;
-        }
         if (!isInSearchUserAgent(useAgent)) {
             return false;
         }
+
 
         if (isInResources(url)) {
             return false;
@@ -154,7 +167,7 @@ public class PreRenderSEOFilter implements Filter {
     }
 
     private boolean hasEscapedFragment(HttpServletRequest request) {
-        return StringUtils.isBlank(request.getParameter("_escaped_fragment_"));
+        return request.getParameterMap().containsKey("_escaped_fragment_");
     }
 
     private String getApiUrl(String url) {

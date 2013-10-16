@@ -27,7 +27,7 @@
         <artifactId>oss-parent</artifactId>
         <version>7</version>
     </parent>
-    <description />
+    <description/>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>4.11</junit.version>
@@ -36,6 +36,7 @@
         <commons-lange.version>2.6</commons-lange.version>
         <servlet-api.version>2.5</servlet-api.version>
         <commons-httpclient.version>3.1</commons-httpclient.version>
+        <log4j.version>1.2.9</log4j.version>
     </properties>
 
     <dependencies>
@@ -77,6 +78,11 @@
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
             <version>${commons-httpclient.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
     </dependencies>
 
