@@ -125,12 +125,28 @@ public class PreRenderSEOFilter implements Filter {
         final String url = request.getRequestURI();
         final String referer = request.getHeader("Referer");
 
+        if (StringUtils.isBlank(useAgent)) {
+            return false;
+        }
+
         if (hasEscapedFragment(request)) {
             return true;
         }
+        if (!isInSearchUserAgent(useAgent)) {
+            return false;
+        }
 
-        if (StringUtils.isBlank(useAgent) || !isGetMethod(request.getMethod()) || !isInSearchUserAgent(useAgent) || isInResources(url)
-                || !isInWhiteList(url) || isInBlackList(url, referer)) {
+        if (isInResources(url)) {
+            return false;
+        }
+
+        final List<String> whiteList = getWhitelist();
+        if (whiteList != null && !isInWhiteList(url, whiteList)) {
+            return false;
+        }
+
+        final List<String> blacklist = getBlacklist();
+        if (blacklist != null && isInBlackList(url, referer, blacklist)) {
             return false;
         }
 
@@ -139,10 +155,6 @@ public class PreRenderSEOFilter implements Filter {
 
     private boolean hasEscapedFragment(HttpServletRequest request) {
         return StringUtils.isBlank(request.getParameter("_escaped_fragment_"));
-    }
-
-    private boolean isGetMethod(String method) {
-        return method.equalsIgnoreCase("GET");
     }
 
     private String getApiUrl(String url) {
@@ -158,10 +170,8 @@ public class PreRenderSEOFilter implements Filter {
         return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "http://prerender.herokuapp.com/";
     }
 
-    private boolean isInBlackList(final String url, final String referer) {
-        final List<String> blacklist = getBlacklist();
-
-        return blacklist != null && from(blacklist).anyMatch(new Predicate<String>() {
+    private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
+        return from(blacklist).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String regex) {
                 final Pattern pattern = Pattern.compile(regex);
@@ -171,9 +181,8 @@ public class PreRenderSEOFilter implements Filter {
         });
     }
 
-    private boolean isInWhiteList(final String url) {
-        final List<String> whitelist = getWhitelist();
-        return whitelist == null || from(whitelist).anyMatch(new Predicate<String>() {
+    private boolean isInWhiteList(final String url, List<String> whitelist) {
+        return from(whitelist).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String regex) {
                 return Pattern.compile(regex).matcher(url).matches();
