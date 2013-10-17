@@ -7,7 +7,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +21,6 @@ import static com.google.common.collect.FluentIterable.from;
 
 public class PreRenderSEOFilter implements Filter {
 
-    private static final Logger logger = Logger.getLogger(PreRenderSEOFilter.class);
     private FilterConfig filterConfig;
 
     @Override
@@ -37,7 +35,6 @@ public class PreRenderSEOFilter implements Filter {
             final HttpServletRequest request = (HttpServletRequest) servletRequest;
             if (shouldShowPrerenderedPage(request)) {
                 final ResponseResult result = getPrerenderedPageResponse(request);
-                logger.info(String.format("Prerender server response:code = %d; body = %s", result.getStatusCode(), result.getResponseBody()));
                 if (result.getStatusCode() == 200) {
                     final PrintWriter writer = servletResponse.getWriter();
                     writer.write(result.getResponseBody());
@@ -46,20 +43,19 @@ public class PreRenderSEOFilter implements Filter {
                 }
             }
         } catch (Exception e) {
-            logger.error("Some error about prerender.", e);
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
     private ResponseResult getPrerenderedPageResponse(HttpServletRequest request) throws IOException {
         final String apiUrl = getApiUrl(getFullUrl(request));
-        logger.info(String.format("SEO request %s .......", apiUrl));
         final HttpClient httpClient = new HttpClient();
         final GetMethod getMethod = new GetMethod(apiUrl);
         setConfig(httpClient);
         setHttpHeader(getMethod);
         final int code = httpClient.executeMethod(getMethod);
-        String body = new String(getMethod.getResponseBodyAsString().getBytes("utf-8"));
+        final String responseBody = getMethod.getResponseBodyAsString();
+        String body = new String(responseBody.getBytes("utf-8"));
         return new ResponseResult(code, body);
     }
 

@@ -11,6 +11,10 @@
             <param-name>prerenderServiceUrl</param-name>
             <param-value>http://localhost:3000</param-value>
         </init-param>
+        <init-param>
+            <param-name>crawlerUserAgents</param-name>
+            <param-value>me</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>prerender</filter-name>
