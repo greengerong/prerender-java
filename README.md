@@ -9,7 +9,7 @@ Use this java filter that prerenders a javascript-rendered page using an externa
 
 `Note:` Make sure you have more than one webserver thread/process running because the prerender service will make a request to your server to render the HTML.
 
-Add this line to your web.xml:
+1:Add this line to your web.xml:
 
     <filter>
           <filter-name>prerender</filter-name>
@@ -28,6 +28,12 @@ Add this line to your web.xml:
           <url-pattern>/*</url-pattern>
       </filter-mapping>
 
+2:add dependency on your project pom:
+    <dependency>
+      <groupId>com.github.greengerong</groupId>
+      <artifactId>prerender-java</artifactId>
+      <version>1.0</version>
+    </dependency>
 
 ## How it works
 1. Check to make sure we should show a prerendered page
