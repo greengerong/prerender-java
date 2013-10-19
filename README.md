@@ -29,6 +29,7 @@ Use this java filter that prerenders a javascript-rendered page using an externa
       </filter-mapping>
 
 2:add dependency on your project pom:
+
     <dependency>
       <groupId>com.github.greengerong</groupId>
       <artifactId>prerender-java</artifactId>
