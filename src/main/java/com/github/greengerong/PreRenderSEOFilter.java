@@ -1,16 +1,7 @@
 package com.github.greengerong;
 
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.lang.StringUtils;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
+import static com.google.common.collect.FluentIterable.from;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -19,15 +10,49 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.FluentIterable.from;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 
 public class PreRenderSEOFilter implements Filter {
 
     private FilterConfig filterConfig;
+    
+    private CloseableHttpClient httpClient;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
+        
+        HttpClientBuilder builder = HttpClients.custom();
+        
+        final String proxy = filterConfig.getInitParameter("proxy");
+        if (StringUtils.isNotBlank(proxy)) {
+            final int proxyPort = Integer.parseInt(filterConfig.getInitParameter("proxyPort"));
+        	DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(new HttpHost(proxy, proxyPort));
+            builder = builder.setRoutePlanner(routePlanner);
+        }
+        
+        builder = builder.setConnectionManager(new PoolingHttpClientConnectionManager());
+        httpClient = builder.build();
     }
 
     @Override
@@ -51,14 +76,16 @@ public class PreRenderSEOFilter implements Filter {
 
     private ResponseResult getPrerenderedPageResponse(HttpServletRequest request) throws IOException {
         final String apiUrl = getApiUrl(getFullUrl(request));
-        final HttpClient httpClient = new HttpClient();
-        final GetMethod getMethod = new GetMethod(apiUrl);
-        setConfig(httpClient);
+        final HttpGet getMethod = new HttpGet(apiUrl);
         setHttpHeader(getMethod);
-        final int code = httpClient.executeMethod(getMethod);
-        final String responseBody = getMethod.getResponseBodyAsString();
-        String body = new String(responseBody.getBytes("utf-8"));
-        return new ResponseResult(code, body);
+        CloseableHttpResponse response = httpClient.execute(getMethod);
+        try {
+            final int code = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf-8");
+            return new ResponseResult(code, body);
+        } finally {
+        	response.close();
+        }
     }
 
     private String getFullUrl(HttpServletRequest request) {
@@ -71,22 +98,19 @@ public class PreRenderSEOFilter implements Filter {
         return url.toString();
     }
 
-    private void setHttpHeader(HttpMethod httpMethod) {
-        httpMethod.setRequestHeader("Cache-Control", "no-cache");
-        httpMethod.setRequestHeader("Content-Type", "text/html");
-    }
-
-    private void setConfig(HttpClient httpClient) {
-        final String proxy = filterConfig.getInitParameter("proxy");
-        if (StringUtils.isNotBlank(proxy)) {
-            final int proxyPort = Integer.parseInt(filterConfig.getInitParameter("proxyPort"));
-            httpClient.getHostConfiguration().setProxy(proxy, proxyPort);
-        }
+    private void setHttpHeader(HttpGet httpMethod) {
+        httpMethod.setHeader("Cache-Control", "no-cache");
+        httpMethod.setHeader("Content-Type", "text/html");
     }
 
     @Override
     public void destroy() {
         filterConfig = null;
+        try {
+			httpClient.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 
     private List<String> getCrawlerUserAgents() {
@@ -134,7 +158,7 @@ public class PreRenderSEOFilter implements Filter {
         final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
 
-        if (!"GET".equals(request.getMethod())) {
+        if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
         	// only respond to GET requests
         	return false;
         }
