@@ -3,6 +3,7 @@ package com.github.greengerong;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -10,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -132,20 +134,28 @@ public class PreRenderSEOFilter implements Filter {
         final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
 
+        if (!"GET".equals(request.getMethod())) {
+        	// only respond to GET requests
+        	return false;
+        }
+        
         if (hasEscapedFragment(request)) {
+        	// request has the escape fragment, as defined by google, intercept the request
             return true;
         }
 
         if (StringUtils.isBlank(userAgent)) {
+        	// no User-Agent header, don't intercept
             return false;
         }
 
         if (!isInSearchUserAgent(userAgent)) {
+        	// User-Agent is not a search bot, don't intercept
             return false;
         }
 
-
         if (isInResources(url)) {
+        	// request is for a (static) resource, don't intercept
             return false;
         }
 
