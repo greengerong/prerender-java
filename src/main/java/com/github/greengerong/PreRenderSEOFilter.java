@@ -128,7 +128,7 @@ public class PreRenderSEOFilter implements Filter {
     }
 
     private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
-        final String useAgent = request.getHeader("User-Agent");
+        final String userAgent = request.getHeader("User-Agent");
         final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
 
@@ -136,11 +136,11 @@ public class PreRenderSEOFilter implements Filter {
             return true;
         }
 
-        if (StringUtils.isBlank(useAgent)) {
+        if (StringUtils.isBlank(userAgent)) {
             return false;
         }
 
-        if (!isInSearchUserAgent(useAgent)) {
+        if (!isInSearchUserAgent(userAgent)) {
             return false;
         }
 
@@ -208,11 +208,11 @@ public class PreRenderSEOFilter implements Filter {
         });
     }
 
-    private boolean isInSearchUserAgent(final String useAgent) {
+    private boolean isInSearchUserAgent(final String userAgent) {
         return from(getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String item) {
-                return useAgent.toLowerCase().indexOf(item.toLowerCase()) >= 0;
+                return userAgent.toLowerCase().indexOf(item.toLowerCase()) >= 0;
             }
         });
     }
