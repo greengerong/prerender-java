@@ -212,7 +212,7 @@ public class PreRenderSEOFilter implements Filter {
         return from(getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String item) {
-                return item.equalsIgnoreCase(useAgent);
+                return useAgent.toLowerCase().indexOf(item.toLowerCase()) >= 0;
             }
         });
     }
