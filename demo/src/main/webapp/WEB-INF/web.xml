@@ -13,7 +13,7 @@
         </init-param>
         <init-param>
             <param-name>crawlerUserAgents</param-name>
-            <param-value>me</param-value>
+            <param-value>YahooSeeker</param-value>
         </init-param>
     </filter>
     <filter-mapping>
