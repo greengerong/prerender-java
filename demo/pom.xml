@@ -4,7 +4,7 @@
     <groupId>com.github.greengerong</groupId>
     <artifactId>demo</artifactId>
     <packaging>war</packaging>
-    <version>1.0</version>
+    <version>1.2-SNAPSHOT</version>
     <name>demo Maven Webapp</name>
     <url>http://maven.apache.org</url>
     <dependencies>
