@@ -4,22 +4,53 @@
     <groupId>com.github.greengerong</groupId>
     <artifactId>demo</artifactId>
     <packaging>war</packaging>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>demo Maven Webapp</name>
     <url>http://maven.apache.org</url>
     <dependencies>
         <dependency>
             <groupId>com.github.greengerong</groupId>
             <artifactId>prerender-java</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
         <finalName>demo</finalName>
         <plugins>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>6.1.10</version>
+                <configuration>
+                    <webAppConfig>
+                        <!--see page http://localhost:8080/test-->
+                        <contextPath>/test</contextPath>
+                        <tempDirectory>${project.build.directory}/demo/</tempDirectory>
+                    </webAppConfig>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <stopKey>foo</stopKey>
+                    <stopPort>8080</stopPort>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-jetty</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <scanIntervalSeconds>0</scanIntervalSeconds>
+                            <daemon>true</daemon>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-jetty</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
