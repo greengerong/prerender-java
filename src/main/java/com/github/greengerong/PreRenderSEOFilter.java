@@ -94,38 +94,38 @@ public class PreRenderSEOFilter implements Filter {
                 return true;
             }
         } finally {
-        	httpResponse.close();
+            httpResponse.close();
         }
-		return false;
-	}
+        return false;
+    }
 
     /** Copy proxied response headers back to the servlet client. */
     protected void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
-    	for (Header header : proxyResponse.getAllHeaders()) {
-    		if (hopByHopHeaders.containsHeader(header.getName()))
-    			continue;
-    		servletResponse.addHeader(header.getName(), header.getValue());
-    	}
+        for (Header header : proxyResponse.getAllHeaders()) {
+            if (hopByHopHeaders.containsHeader(header.getName()))
+                continue;
+            servletResponse.addHeader(header.getName(), header.getValue());
+        }
     }
     
     /** Copy response body data (the entity) from the proxy to the servlet client. */
     protected void copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse) throws IOException {
-    	HttpEntity entity = proxyResponse.getEntity();
-    	if (entity != null) {
-    		OutputStream servletOutputStream = servletResponse.getOutputStream();
-    		try {
-    			entity.writeTo(servletOutputStream);
-    		} finally {
-    			closeQuietly(servletOutputStream);
-    		}
-    	}
+        HttpEntity entity = proxyResponse.getEntity();
+        if (entity != null) {
+            OutputStream servletOutputStream = servletResponse.getOutputStream();
+            try {
+                entity.writeTo(servletOutputStream);
+            } finally {
+                closeQuietly(servletOutputStream);
+            }
+        }
     }
     
     protected void closeQuietly(Closeable closeable) {
-    	try {
-    		closeable.close();
-    	} catch (IOException e) {
-    	}
+        try {
+            closeable.close();
+        } catch (IOException e) {
+        }
     }
     
     /** These are the "hop-by-hop" headers that should not be copied.
@@ -188,10 +188,10 @@ public class PreRenderSEOFilter implements Filter {
     public void destroy() {
         filterConfig = null;
         try {
-			httpClient.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+            httpClient.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<String> getCrawlerUserAgents() {
@@ -240,27 +240,27 @@ public class PreRenderSEOFilter implements Filter {
         final String referer = request.getHeader("Referer");
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-        	// only respond to GET requests
-        	return false;
+            // only respond to GET requests
+            return false;
         }
         
         if (hasEscapedFragment(request)) {
-        	// request has the escape fragment, as defined by google, intercept the request
+            // request has the escape fragment, as defined by google, intercept the request
             return true;
         }
 
         if (StringUtils.isBlank(userAgent)) {
-        	// no User-Agent header, don't intercept
+            // no User-Agent header, don't intercept
             return false;
         }
 
         if (!isInSearchUserAgent(userAgent)) {
-        	// User-Agent is not a search bot, don't intercept
+            // User-Agent is not a search bot, don't intercept
             return false;
         }
 
         if (isInResources(url)) {
-        	// request is for a (static) resource, don't intercept
+            // request is for a (static) resource, don't intercept
             return false;
         }
 
