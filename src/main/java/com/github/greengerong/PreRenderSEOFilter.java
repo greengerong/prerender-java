@@ -230,43 +230,43 @@ public class PreRenderSEOFilter implements Filter {
         log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-            log.trace("Request is not HTTP GET, don't intercept");
+            log.trace("Request is not HTTP GET; intercept: no");
             return false;
         }
         
         if (hasEscapedFragment(request)) {
-            log.trace("Request Has _escaped_fragment_, intercepting");
+            log.trace("Request Has _escaped_fragment_; intercept: yes");
             return true;
         }
 
         if (StringUtils.isBlank(userAgent)) {
-            log.trace("Request has blank userAgent, don't intercept");
+            log.trace("Request has blank userAgent; intercept: no");
             return false;
         }
 
         if (!isInSearchUserAgent(userAgent)) {
-            log.trace("Request User-Agent is not a search bot, don't intercept");
+            log.trace("Request User-Agent is not a search bot; intercept: no");
             return false;
         }
 
         if (isInResources(url)) {
-            log.trace("request is for a (static) resource, don't intercept");
+            log.trace("request is for a (static) resource; intercept: no");
             return false;
         }
 
         final List<String> whiteList = getWhitelist();
         if (whiteList != null && !isInWhiteList(url, whiteList)) {
-            log.trace("Request is whitelisted, intercepting");
-            return false;
+            log.trace("Request is whitelisted; intercept: yes");
+            return true;
         }
 
         final List<String> blacklist = getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
-            log.trace("Request is blacklisted, don't intercept");
+            log.trace("Request is blacklisted; intercept: no");
             return false;
         }
 
-        log.trace("Defaulting to request intercepting");
+        log.trace("Defaulting to request intercept: yes");
         return true;
     }
 
