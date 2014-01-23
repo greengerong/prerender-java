@@ -256,13 +256,13 @@ public class PreRenderSEOFilter implements Filter {
 
         final List<String> whiteList = getWhitelist();
         if (whiteList != null && !isInWhiteList(url, whiteList)) {
-            log.trace("Request is whitelisted; intercept: yes");
-            return true;
+            log.trace("Whitelist is enabled, but this request is not listed; intercept: no");
+            return false;
         }
 
         final List<String> blacklist = getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
-            log.trace("Request is blacklisted; intercept: no");
+            log.trace("Blacklist is enabled, and this request is listed; intercept: no");
             return false;
         }
 
