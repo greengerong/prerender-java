@@ -230,7 +230,7 @@ public class PreRenderSEOFilter implements Filter {
         log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-            log.trace("Request is not HTTP GET, not intercepting");
+            log.trace("Request is not HTTP GET, don't intercept");
             return false;
         }
         
@@ -240,7 +240,7 @@ public class PreRenderSEOFilter implements Filter {
         }
 
         if (StringUtils.isBlank(userAgent)) {
-            log.trace("Request has blank userAgent, not intercepting");
+            log.trace("Request has blank userAgent, don't intercept");
             return false;
         }
 
@@ -262,11 +262,11 @@ public class PreRenderSEOFilter implements Filter {
 
         final List<String> blacklist = getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
-            log.trace("Request is blacklisted, not intercepting");
+            log.trace("Request is blacklisted, don't intercept");
             return false;
         }
 
-        log.trace("Defaulting to intercept");
+        log.trace("Defaulting to request intercepting");
         return true;
     }
 
