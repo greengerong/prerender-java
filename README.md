@@ -33,7 +33,7 @@ Use this java filter that prerenders a javascript-rendered page using an externa
     <dependency>
       <groupId>com.github.greengerong</groupId>
       <artifactId>prerender-java</artifactId>
-      <version>1.2</version>
+      <version>1.3</version>
     </dependency>
 
 ## How it works
