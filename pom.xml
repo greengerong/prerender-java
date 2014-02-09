@@ -3,7 +3,7 @@
 
     <groupId>com.github.greengerong</groupId>
     <artifactId>prerender-java</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3</version>
     <packaging>jar</packaging>
 
     <name>prerender-java</name>
