@@ -3,47 +3,35 @@ package com.github.greengerong;
 
 import static com.google.common.collect.FluentIterable.from;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
+import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 
 public class PreRenderSEOFilter implements Filter {
+    
+    private final static Logger log = LoggerFactory.getLogger(PreRenderSEOFilter.class);
 
     private FilterConfig filterConfig;
     
@@ -238,42 +226,47 @@ public class PreRenderSEOFilter implements Filter {
         final String userAgent = request.getHeader("User-Agent");
         final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
+        
+        log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-            // only respond to GET requests
+            log.trace("Request is not HTTP GET; intercept: no");
             return false;
         }
         
         if (hasEscapedFragment(request)) {
-            // request has the escape fragment, as defined by google, intercept the request
+            log.trace("Request Has _escaped_fragment_; intercept: yes");
             return true;
         }
 
         if (StringUtils.isBlank(userAgent)) {
-            // no User-Agent header, don't intercept
+            log.trace("Request has blank userAgent; intercept: no");
             return false;
         }
 
         if (!isInSearchUserAgent(userAgent)) {
-            // User-Agent is not a search bot, don't intercept
+            log.trace("Request User-Agent is not a search bot; intercept: no");
             return false;
         }
 
         if (isInResources(url)) {
-            // request is for a (static) resource, don't intercept
+            log.trace("request is for a (static) resource; intercept: no");
             return false;
         }
 
         final List<String> whiteList = getWhitelist();
         if (whiteList != null && !isInWhiteList(url, whiteList)) {
+            log.trace("Whitelist is enabled, but this request is not listed; intercept: no");
             return false;
         }
 
         final List<String> blacklist = getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
+            log.trace("Blacklist is enabled, and this request is listed; intercept: no");
             return false;
         }
 
+        log.trace("Defaulting to request intercept: yes");
         return true;
     }
 
