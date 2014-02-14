@@ -81,6 +81,16 @@ If you want to use token with the prerender service, you can config it.
 ```
 
 
+### prerender event handler
+
+If you want to cache the caching, analytics, log or others, you can config it. It should be instance of "com.github.greengerong.PreRenderEventHandler"
+
+
+``` xml
+ config filter init param with "preRenderEventHandler";
+```
+
+
 ## Testing
 
 If you want to make sure your pages are rendering correctly:

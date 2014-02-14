@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -40,11 +41,28 @@ public class PreRenderSEOFilter implements Filter {
     private FilterConfig filterConfig;
 
     private CloseableHttpClient httpClient;
+    private PreRenderEventHandler preRenderEventHandler;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
+        this.httpClient = getHttpClient(filterConfig);
+        this.preRenderEventHandler = getEventHandler(filterConfig);
+    }
 
+    private PreRenderEventHandler getEventHandler(FilterConfig filterConfig) {
+        final String preRenderEventHandler = filterConfig.getInitParameter("preRenderEventHandler");
+        if (StringUtils.isNotBlank(preRenderEventHandler)) {
+            try {
+                return (PreRenderEventHandler) Class.forName(preRenderEventHandler).newInstance();
+            } catch (Exception e) {
+                log.error("PreRenderEventHandler class not find or can not new a instance", e);
+            }
+        }
+        return null;
+    }
+
+    private CloseableHttpClient getHttpClient(FilterConfig filterConfig) {
         HttpClientBuilder builder = HttpClients.custom();
 
         final String proxy = filterConfig.getInitParameter("proxy");
@@ -55,7 +73,7 @@ public class PreRenderSEOFilter implements Filter {
         }
 
         builder = builder.setConnectionManager(new PoolingHttpClientConnectionManager());
-        httpClient = builder.build();
+        return builder.build();
     }
 
     @Override
@@ -65,7 +83,8 @@ public class PreRenderSEOFilter implements Filter {
             final HttpServletRequest request = (HttpServletRequest) servletRequest;
             final HttpServletResponse response = (HttpServletResponse) servletResponse;
             if (shouldShowPrerenderedPage(request)) {
-                if (proxyPrerenderedPageResponse(request, response)) {
+
+                if (beforeRender(request, response) || proxyPrerenderedPageResponse(request, response)) {
                     return;
                 }
             }
@@ -75,22 +94,43 @@ public class PreRenderSEOFilter implements Filter {
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
+    private boolean beforeRender(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (preRenderEventHandler != null) {
+            final String html = preRenderEventHandler.beforeRender(request);
+            if (StringUtils.isNotBlank(html)) {
+                final PrintWriter writer = response.getWriter();
+                writer.write(html);
+                writer.flush();
+                closeQuietly(writer);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean proxyPrerenderedPageResponse(HttpServletRequest request, HttpServletResponse response) throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(request));
         final HttpGet getMethod = new HttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
         withPrerenderToken(getMethod);
-        CloseableHttpResponse httpResponse = httpClient.execute(getMethod);
+        CloseableHttpResponse proxyResponse = httpClient.execute(getMethod);
         try {
-            if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                copyResponseHeaders(httpResponse, response);
-                copyResponseEntity(httpResponse, response);
+            if (proxyResponse.getStatusLine().getStatusCode() == 200) {
+                afterRender(request, proxyResponse);
+                copyResponseHeaders(proxyResponse, response);
+                copyResponseEntity(proxyResponse, response);
                 return true;
             }
         } finally {
-            httpResponse.close();
+            closeQuietly(proxyResponse);
         }
         return false;
+    }
+
+    private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse) {
+        if (preRenderEventHandler != null) {
+            preRenderEventHandler.afterRender(request, proxyResponse);
+        }
     }
 
     private void withPrerenderToken(HttpRequest proxyRequest) {
