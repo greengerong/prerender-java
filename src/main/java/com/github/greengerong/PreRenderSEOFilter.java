@@ -70,6 +70,7 @@ public class PreRenderSEOFilter implements Filter {
                 }
             }
         } catch (Exception e) {
+            log.error("Prerender service error", e);
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }
@@ -105,9 +106,9 @@ public class PreRenderSEOFilter implements Filter {
      */
     protected void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
         for (Header header : proxyResponse.getAllHeaders()) {
-            if (hopByHopHeaders.containsHeader(header.getName()))
-                continue;
-            servletResponse.addHeader(header.getName(), header.getValue());
+            if (!hopByHopHeaders.containsHeader(header.getName())) {
+                servletResponse.addHeader(header.getName(), header.getValue());
+            }
         }
     }
 
@@ -130,6 +131,7 @@ public class PreRenderSEOFilter implements Filter {
         try {
             closeable.close();
         } catch (IOException e) {
+            log.error("Close proxy error", e);
         }
     }
 
@@ -162,24 +164,22 @@ public class PreRenderSEOFilter implements Filter {
         while (enumerationOfHeaderNames.hasMoreElements()) {
             String headerName = (String) enumerationOfHeaderNames.nextElement();
             //Instead the content-length is effectively set via InputStreamEntity
-            if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
-                continue;
-            if (hopByHopHeaders.containsHeader(headerName))
-                continue;
-
-            Enumeration<?> headers = servletRequest.getHeaders(headerName);
-            while (headers.hasMoreElements()) {//sometimes more than one value
-                String headerValue = (String) headers.nextElement();
-                // In case the proxy host is running multiple virtual servers,
-                // rewrite the Host header to ensure that we get content from
-                // the correct virtual server
-                if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
-                    HttpHost host = URIUtils.extractHost(new URI(getPrerenderServiceUrl()));
-                    headerValue = host.getHostName();
-                    if (host.getPort() != -1)
-                        headerValue += ":" + host.getPort();
+            if (!headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) && !hopByHopHeaders.containsHeader(headerName)) {
+                Enumeration<?> headers = servletRequest.getHeaders(headerName);
+                while (headers.hasMoreElements()) {//sometimes more than one value
+                    String headerValue = (String) headers.nextElement();
+                    // In case the proxy host is running multiple virtual servers,
+                    // rewrite the Host header to ensure that we get content from
+                    // the correct virtual server
+                    if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
+                        HttpHost host = URIUtils.extractHost(new URI(getPrerenderServiceUrl()));
+                        headerValue = host.getHostName();
+                        if (host.getPort() != -1) {
+                            headerValue += ":" + host.getPort();
+                        }
+                    }
+                    proxyRequest.addHeader(headerName, headerValue);
                 }
-                proxyRequest.addHeader(headerName, headerValue);
             }
         }
     }
