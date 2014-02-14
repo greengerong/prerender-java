@@ -246,7 +246,7 @@ public class PreRenderSEOFilter implements Filter {
 
     private List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("googlebot", "yahoo", "bingbot", "baiduspider",
-                "facebookexternalhit", "twitterbot");
+                "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly");
         final String crawlerUserAgentsFromConfig = filterConfig.getInitParameter("crawlerUserAgents");
         if (StringUtils.isNotBlank(crawlerUserAgentsFromConfig)) {
             crawlerUserAgents.addAll(Arrays.asList(crawlerUserAgentsFromConfig.trim().split(",")));
