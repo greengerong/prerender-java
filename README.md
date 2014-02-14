@@ -71,6 +71,16 @@ As an alternative, you can pass `prerender_service_url` in the options object du
  config filter init param with "prerenderServiceUrl";
 ```
 
+### prerender service token
+
+If you want to use token with the prerender service, you can config it.
+
+
+``` xml
+ config filter init param with "prerenderToken";
+```
+
+
 ## Testing
 
 If you want to make sure your pages are rendering correctly:
