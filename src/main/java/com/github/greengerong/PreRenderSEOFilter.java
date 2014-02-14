@@ -1,24 +1,16 @@
 package com.github.greengerong;
 
 
-import static com.google.common.collect.FluentIterable.from;
-
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIUtils;
-import org.apache.http.impl.client.*;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
@@ -26,30 +18,42 @@ import org.apache.http.message.HeaderGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import static com.google.common.collect.FluentIterable.from;
 
 public class PreRenderSEOFilter implements Filter {
-    
+
     private final static Logger log = LoggerFactory.getLogger(PreRenderSEOFilter.class);
 
     private FilterConfig filterConfig;
-    
+
     private CloseableHttpClient httpClient;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
-        
+
         HttpClientBuilder builder = HttpClients.custom();
-        
+
         final String proxy = filterConfig.getInitParameter("proxy");
         if (StringUtils.isNotBlank(proxy)) {
             final int proxyPort = Integer.parseInt(filterConfig.getInitParameter("proxyPort"));
-        	DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(new HttpHost(proxy, proxyPort));
+            DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(new HttpHost(proxy, proxyPort));
             builder = builder.setRoutePlanner(routePlanner);
         }
-        
+
         builder = builder.setConnectionManager(new PoolingHttpClientConnectionManager());
         httpClient = builder.build();
     }
@@ -61,9 +65,9 @@ public class PreRenderSEOFilter implements Filter {
             final HttpServletRequest request = (HttpServletRequest) servletRequest;
             final HttpServletResponse response = (HttpServletResponse) servletResponse;
             if (shouldShowPrerenderedPage(request)) {
-            	if (proxyPrerenderedPageResponse(request, response)) {
-            		return;
-            	}
+                if (proxyPrerenderedPageResponse(request, response)) {
+                    return;
+                }
             }
         } catch (Exception e) {
         }
@@ -74,6 +78,7 @@ public class PreRenderSEOFilter implements Filter {
         final String apiUrl = getApiUrl(getFullUrl(request));
         final HttpGet getMethod = new HttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
+        withPrerenderToken(getMethod);
         CloseableHttpResponse httpResponse = httpClient.execute(getMethod);
         try {
             if (httpResponse.getStatusLine().getStatusCode() == 200) {
@@ -87,7 +92,17 @@ public class PreRenderSEOFilter implements Filter {
         return false;
     }
 
-    /** Copy proxied response headers back to the servlet client. */
+    private void withPrerenderToken(HttpRequest proxyRequest) {
+        final String token = filterConfig.getInitParameter("prerenderToken");
+        //for new version prerender with token.
+        if (StringUtils.isNotBlank(token)) {
+            proxyRequest.addHeader("X-Prerender-Token", token);
+        }
+    }
+
+    /**
+     * Copy proxied response headers back to the servlet client.
+     */
     protected void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
         for (Header header : proxyResponse.getAllHeaders()) {
             if (hopByHopHeaders.containsHeader(header.getName()))
@@ -95,8 +110,10 @@ public class PreRenderSEOFilter implements Filter {
             servletResponse.addHeader(header.getName(), header.getValue());
         }
     }
-    
-    /** Copy response body data (the entity) from the proxy to the servlet client. */
+
+    /**
+     * Copy response body data (the entity) from the proxy to the servlet client.
+     */
     protected void copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse) throws IOException {
         HttpEntity entity = proxyResponse.getEntity();
         if (entity != null) {
@@ -108,60 +125,65 @@ public class PreRenderSEOFilter implements Filter {
             }
         }
     }
-    
+
     protected void closeQuietly(Closeable closeable) {
         try {
             closeable.close();
         } catch (IOException e) {
         }
     }
-    
-    /** These are the "hop-by-hop" headers that should not be copied.
+
+    /**
+     * These are the "hop-by-hop" headers that should not be copied.
      * http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
      * I use an HttpClient HeaderGroup class instead of Set<String> because this
      * approach does case insensitive lookup faster.
      */
     protected static final HeaderGroup hopByHopHeaders;
-    static {
-      hopByHopHeaders = new HeaderGroup();
-      String[] headers = new String[] {
-          "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
-          "TE", "Trailers", "Transfer-Encoding", "Upgrade" };
-      for (String header : headers) {
-        hopByHopHeaders.addHeader(new BasicHeader(header, null));
-      }
-    }
-    
-    /** Copy request headers from the servlet client to the proxy request. 
-     * @throws URISyntaxException */
-    protected void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest) throws URISyntaxException {
-      // Get an Enumeration of all of the header names sent by the client
-      Enumeration<?> enumerationOfHeaderNames = servletRequest.getHeaderNames();
-      while (enumerationOfHeaderNames.hasMoreElements()) {
-        String headerName = (String) enumerationOfHeaderNames.nextElement();
-        //Instead the content-length is effectively set via InputStreamEntity
-        if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
-          continue;
-        if (hopByHopHeaders.containsHeader(headerName))
-          continue;
 
-        Enumeration<?> headers = servletRequest.getHeaders(headerName);
-        while (headers.hasMoreElements()) {//sometimes more than one value
-          String headerValue = (String) headers.nextElement();
-          // In case the proxy host is running multiple virtual servers,
-          // rewrite the Host header to ensure that we get content from
-          // the correct virtual server
-          if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
-            HttpHost host = URIUtils.extractHost(new URI(getPrerenderServiceUrl()));
-            headerValue = host.getHostName();
-            if (host.getPort() != -1)
-              headerValue += ":"+host.getPort();
-          }
-          proxyRequest.addHeader(headerName, headerValue);
+    static {
+        hopByHopHeaders = new HeaderGroup();
+        String[] headers = new String[]{
+                "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+                "TE", "Trailers", "Transfer-Encoding", "Upgrade"};
+        for (String header : headers) {
+            hopByHopHeaders.addHeader(new BasicHeader(header, null));
         }
-      }
     }
-    
+
+    /**
+     * Copy request headers from the servlet client to the proxy request.
+     *
+     * @throws URISyntaxException
+     */
+    protected void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest) throws URISyntaxException {
+        // Get an Enumeration of all of the header names sent by the client
+        Enumeration<?> enumerationOfHeaderNames = servletRequest.getHeaderNames();
+        while (enumerationOfHeaderNames.hasMoreElements()) {
+            String headerName = (String) enumerationOfHeaderNames.nextElement();
+            //Instead the content-length is effectively set via InputStreamEntity
+            if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
+                continue;
+            if (hopByHopHeaders.containsHeader(headerName))
+                continue;
+
+            Enumeration<?> headers = servletRequest.getHeaders(headerName);
+            while (headers.hasMoreElements()) {//sometimes more than one value
+                String headerValue = (String) headers.nextElement();
+                // In case the proxy host is running multiple virtual servers,
+                // rewrite the Host header to ensure that we get content from
+                // the correct virtual server
+                if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
+                    HttpHost host = URIUtils.extractHost(new URI(getPrerenderServiceUrl()));
+                    headerValue = host.getHostName();
+                    if (host.getPort() != -1)
+                        headerValue += ":" + host.getPort();
+                }
+                proxyRequest.addHeader(headerName, headerValue);
+            }
+        }
+    }
+
     private String getFullUrl(HttpServletRequest request) {
         final StringBuffer url = request.getRequestURL();
         final String queryString = request.getQueryString();
@@ -226,14 +248,14 @@ public class PreRenderSEOFilter implements Filter {
         final String userAgent = request.getHeader("User-Agent");
         final String url = request.getRequestURL().toString();
         final String referer = request.getHeader("Referer");
-        
+
         log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
             log.trace("Request is not HTTP GET; intercept: no");
             return false;
         }
-        
+
         if (hasEscapedFragment(request)) {
             log.trace("Request Has _escaped_fragment_; intercept: yes");
             return true;
@@ -284,7 +306,7 @@ public class PreRenderSEOFilter implements Filter {
 
     private String getPrerenderServiceUrl() {
         final String prerenderServiceUrl = filterConfig.getInitParameter("prerenderServiceUrl");
-        return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "http://prerender.herokuapp.com/";
+        return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "'http://service.prerender.io/'";
     }
 
     private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {

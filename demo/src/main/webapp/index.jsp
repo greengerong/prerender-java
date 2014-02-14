@@ -1,5 +1,6 @@
 <html ng-app>
 	<head>
+        <meta name="fragment" content="!">
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.5/angular.min.js"></script>
 	</head>
 	<body ng-controller="demoCtr">
