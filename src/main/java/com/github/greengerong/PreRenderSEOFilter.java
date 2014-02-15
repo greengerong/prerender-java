@@ -39,8 +39,12 @@ public class PreRenderSEOFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.prerenderConfig = new PrerenderConfig(filterConfig);
-        this.httpClient = prerenderConfig.getHttpClient();
+        this.httpClient = getHttpClient();
         this.preRenderEventHandler = prerenderConfig.getEventHandler();
+    }
+
+    protected CloseableHttpClient getHttpClient() {
+        return prerenderConfig.getHttpClient();
     }
 
     @Override
@@ -77,7 +81,7 @@ public class PreRenderSEOFilter implements Filter {
 
     private boolean proxyPrerenderedPageResponse(HttpServletRequest request, HttpServletResponse response) throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(request));
-        final HttpGet getMethod = new HttpGet(apiUrl);
+        final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
         withPrerenderToken(getMethod);
         CloseableHttpResponse proxyResponse = httpClient.execute(getMethod);
@@ -92,6 +96,10 @@ public class PreRenderSEOFilter implements Filter {
             closeQuietly(proxyResponse);
         }
         return false;
+    }
+
+    protected HttpGet getHttpGet(String apiUrl) {
+        return new HttpGet(apiUrl);
     }
 
     private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse) {
