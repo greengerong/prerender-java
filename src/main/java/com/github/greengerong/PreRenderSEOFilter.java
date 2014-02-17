@@ -81,11 +81,14 @@ public class PreRenderSEOFilter implements Filter {
 
     private boolean proxyPrerenderedPageResponse(HttpServletRequest request, HttpServletResponse response) throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(request));
+        log.trace(String.format("Prerender proxy will send request to:%s", apiUrl));
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
         withPrerenderToken(getMethod);
-        CloseableHttpResponse proxyResponse = httpClient.execute(getMethod);
+        CloseableHttpResponse proxyResponse = null;
+
         try {
+            proxyResponse = httpClient.execute(getMethod);
             if (proxyResponse.getStatusLine().getStatusCode() == HTTP_OK) {
                 afterRender(request, proxyResponse);
                 copyResponseHeaders(proxyResponse, response);
