@@ -95,6 +95,6 @@ public class PrerenderConfig {
 
     public String getPrerenderServiceUrl() {
         final String prerenderServiceUrl = filterConfig.getInitParameter("prerenderServiceUrl");
-        return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "'http://service.prerender.io/'";
+        return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "http://service.prerender.io/";
     }
 }
