@@ -264,7 +264,7 @@ public class PreRenderSEOFilter implements Filter {
             return false;
         }
 
-        log.trace("Defaulting to request intercept: yes");
+        log.trace(String.format("Defaulting to request intercept(user-agent=%s): yes", userAgent));
         return true;
     }
 
