@@ -232,21 +232,6 @@ public class PreRenderSEOFilter implements Filter {
             return false;
         }
 
-        if (hasEscapedFragment(request)) {
-            log.trace("Request Has _escaped_fragment_; intercept: yes");
-            return true;
-        }
-
-        if (StringUtils.isBlank(userAgent)) {
-            log.trace("Request has blank userAgent; intercept: no");
-            return false;
-        }
-
-        if (!isInSearchUserAgent(userAgent)) {
-            log.trace("Request User-Agent is not a search bot; intercept: no");
-            return false;
-        }
-
         if (isInResources(url)) {
             log.trace("request is for a (static) resource; intercept: no");
             return false;
@@ -261,6 +246,21 @@ public class PreRenderSEOFilter implements Filter {
         final List<String> blacklist = prerenderConfig.getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
             log.trace("Blacklist is enabled, and this request is listed; intercept: no");
+            return false;
+        }
+
+        if (hasEscapedFragment(request)) {
+            log.trace("Request Has _escaped_fragment_; intercept: yes");
+            return true;
+        }
+
+        if (StringUtils.isBlank(userAgent)) {
+            log.trace("Request has blank userAgent; intercept: no");
+            return false;
+        }
+
+        if (!isInSearchUserAgent(userAgent)) {
+            log.trace("Request User-Agent is not a search bot; intercept: no");
             return false;
         }
 
