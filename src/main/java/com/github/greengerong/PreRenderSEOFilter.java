@@ -10,6 +10,7 @@ import org.apache.http.client.utils.URIUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,7 +40,6 @@ public class PreRenderSEOFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         this.prerenderConfig = new PrerenderConfig(filterConfig);
         this.httpClient = getHttpClient();
-        this.preRenderEventHandler = prerenderConfig.getEventHandler();
     }
 
     protected CloseableHttpClient getHttpClient() {
@@ -54,7 +53,7 @@ public class PreRenderSEOFilter implements Filter {
             final HttpServletRequest request = (HttpServletRequest) servletRequest;
             final HttpServletResponse response = (HttpServletResponse) servletResponse;
             if (shouldShowPrerenderedPage(request)) {
-
+                this.preRenderEventHandler = prerenderConfig.getEventHandler();
                 if (beforeRender(request, response) || proxyPrerenderedPageResponse(request, response)) {
                     return;
                 }
@@ -90,9 +89,9 @@ public class PreRenderSEOFilter implements Filter {
         try {
             proxyResponse = httpClient.execute(getMethod);
             if (proxyResponse.getStatusLine().getStatusCode() == HTTP_OK) {
-                afterRender(request, proxyResponse);
                 copyResponseHeaders(proxyResponse, response);
-                copyResponseEntity(proxyResponse, response);
+                final String html = copyResponseEntity(proxyResponse, response);
+                afterRender(request, proxyResponse, html);
                 return true;
             }
         } finally {
@@ -105,9 +104,9 @@ public class PreRenderSEOFilter implements Filter {
         return new HttpGet(apiUrl);
     }
 
-    private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse) {
+    private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse, String html) {
         if (preRenderEventHandler != null) {
-            preRenderEventHandler.afterRender(request, proxyResponse);
+            preRenderEventHandler.afterRender(request, proxyResponse, html);
         }
     }
 
@@ -133,16 +132,20 @@ public class PreRenderSEOFilter implements Filter {
     /**
      * Copy response body data (the entity) from the proxy to the servlet client.
      */
-    protected void copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse) throws IOException {
+    protected String copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse) throws IOException {
         HttpEntity entity = proxyResponse.getEntity();
         if (entity != null) {
-            OutputStream servletOutputStream = servletResponse.getOutputStream();
+            PrintWriter printWriter = servletResponse.getWriter();
             try {
-                entity.writeTo(servletOutputStream);
+                final String html = EntityUtils.toString(entity);
+                printWriter.write(html);
+                printWriter.flush();
+                return html;
             } finally {
-                closeQuietly(servletOutputStream);
+                closeQuietly(printWriter);
             }
         }
+        return "";
     }
 
     protected void closeQuietly(Closeable closeable) {
@@ -217,6 +220,10 @@ public class PreRenderSEOFilter implements Filter {
     @Override
     public void destroy() {
         prerenderConfig = null;
+        if (preRenderEventHandler != null) {
+            preRenderEventHandler.destroy();
+            preRenderEventHandler = null;
+        }
         closeQuietly(httpClient);
     }
 

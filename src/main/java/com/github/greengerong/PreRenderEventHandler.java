@@ -9,5 +9,7 @@ public interface PreRenderEventHandler {
 
     String beforeRender(HttpServletRequest clientRequest);
 
-    void afterRender(HttpServletRequest clientRequest, HttpResponse prerenderResponse);
+    void afterRender(HttpServletRequest clientRequest, HttpResponse prerenderResponse, String html);
+
+    void destroy();
 }

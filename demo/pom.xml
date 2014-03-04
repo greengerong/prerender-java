@@ -11,11 +11,32 @@
         <dependency>
             <groupId>com.github.greengerong</groupId>
             <artifactId>prerender-java</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.greengerong</groupId>
+            <artifactId>prerender-java-redis</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
         </dependency>
     </dependencies>
     <build>
         <finalName>demo</finalName>
+
         <plugins>
             <plugin>
                 <groupId>org.mortbay.jetty</groupId>

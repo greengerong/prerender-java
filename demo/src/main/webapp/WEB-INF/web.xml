@@ -15,6 +15,10 @@
             <param-name>crawlerUserAgents</param-name>
             <param-value>YahooSeeker</param-value>
         </init-param>
+        <init-param>
+            <param-name>preRenderEventHandler</param-name>
+            <param-value>com.github.greengerong.PrerenderRedisCache</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>prerender</filter-name>
