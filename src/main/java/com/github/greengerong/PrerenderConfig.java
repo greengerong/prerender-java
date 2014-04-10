@@ -53,6 +53,10 @@ public class PrerenderConfig {
         return filterConfig.getInitParameter("prerenderToken");
     }
 
+    public String getForwardedURLHeader() {
+        return filterConfig.getInitParameter("forwardedURLHeader");
+    }
+
     public List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("googlebot", "yahoo", "bingbot", "baiduspider",
                 "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly");

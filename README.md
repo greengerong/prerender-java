@@ -54,6 +54,9 @@ example: someproxy,someproxy1
 
 ### blacklist
 
+### forwardedURLHeader
+Important for servers behind reverse proxy that need the public url to be used for pre-rendering.
+We usually set the original url in an http header which is added by the reverse proxy (similar to the more standard `x-forwarded-proto` and `x-forwarded-for`)
 
 ### Using your own prerender service
 
