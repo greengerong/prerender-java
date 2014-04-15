@@ -207,14 +207,23 @@ public class PreRenderSEOFilter implements Filter {
         }
     }
 
+    private String getRequestURL(HttpServletRequest request) {
+        if (prerenderConfig.getForwardedURLHeader() != null) {
+            String url = request.getHeader(prerenderConfig.getForwardedURLHeader());
+            if (url != null) {
+                return url;
+            }
+        }
+        return request.getRequestURL().toString();
+    }
+
     private String getFullUrl(HttpServletRequest request) {
-        final StringBuffer url = request.getRequestURL();
+        final String url = getRequestURL(request);
         final String queryString = request.getQueryString();
         if (queryString != null) {
-            url.append('?');
-            url.append(queryString);
+            return url + '?' + queryString;
         }
-        return url.toString();
+        return url;
     }
 
     @Override
@@ -229,7 +238,7 @@ public class PreRenderSEOFilter implements Filter {
 
     private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
         final String userAgent = request.getHeader("User-Agent");
-        final String url = request.getRequestURL().toString();
+        final String url = getRequestURL(request);
         final String referer = request.getHeader("Referer");
 
         log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);

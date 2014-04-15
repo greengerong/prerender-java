@@ -266,4 +266,37 @@ public class PreRenderSEOFilterTest {
         verify(httpClient).execute(httpGet);
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
     }
+
+    @Test
+    public void should_use_request_url_from_custom_header_if_available() throws Exception {
+        //given
+        when(filterConfig.getInitParameter("forwardedURLHeader")).thenReturn("X-Forwarded-URL");
+        when(filterConfig.getInitParameter("whitelist")).thenReturn("http://my.public.domain.com/");
+        when(filterConfig.getInitParameter("blacklist")).thenReturn("http://localhost/test");
+
+        preRenderSEOFilter.init(filterConfig);
+
+        final CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+        final StatusLine statusLine = mock(StatusLine.class);
+
+        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
+        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getHeader("X-Forwarded-URL")).thenReturn("http://my.public.domain.com/");
+
+        when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
+        when(httpClient.execute(httpGet)).thenReturn(httpResponse);
+        when(httpResponse.getStatusLine()).thenReturn(statusLine);
+        final HashMap<String, String> map = Maps.newHashMap();
+        map.put("_escaped_fragment_", "");
+        when(servletRequest.getParameterMap()).thenReturn(map);
+        when(statusLine.getStatusCode()).thenReturn(PreRenderSEOFilter.HTTP_OK);
+        when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
+
+        //when
+        preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
+
+        //then
+        verify(httpClient).execute(httpGet);
+        verify(filterChain, never()).doFilter(servletRequest, servletResponse);
+    }
 }
