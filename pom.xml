@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.greengerong</groupId>
-    <artifactId>prerender-java</artifactId>
-    <version>1.6.3-SNAPSHOT</version>
+    <groupId>com.github.avaliani.snapshot</groupId>
+    <artifactId>webapp-snapshot-java</artifactId>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>prerender-java</name>
+    <name>webapp-snapshot-java</name>
     <url>http://maven.apache.org</url>
 
     <licenses>
@@ -16,11 +16,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <scm>
-        <connection>scm:git:git@github.com:greengerong/prerender-java.git</connection>
-        <developerConnection>scm:git:git@github.com:greengerong/prerender-java.git</developerConnection>
-        <url>git@github.com:greengerong/prerender-java.git</url>
-    </scm>
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -81,9 +76,23 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <!-- <artifactId>slf4j-simple</artifactId> -->
+            <artifactId>slf4j-jdk14</artifactId>
+            <!-- <artifactId>slf4j-api</artifactId> -->
             <version>${slf4j.version}</version>
         </dependency>
+        <!-- has javax.annotation annotation -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>0.11.8</version>
+        </dependency>
+
     </dependencies>
 
     <distributionManagement>
