@@ -29,39 +29,200 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.FluentIterable.from;
 
 public class PreRenderSEOFilter implements Filter {
-
-    private final static Logger log = LoggerFactory.getLogger(PreRenderSEOFilter.class);
-    private CloseableHttpClient httpClient;
-    private PreRenderEventHandler preRenderEventHandler;
-    private PrerenderConfig prerenderConfig;
-    public static final int HTTP_OK = 200;
+    private PrerenderService prerenderService;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.prerenderConfig = new PrerenderConfig(filterConfig);
-        this.httpClient = getHttpClient();
-    }
-
-    protected CloseableHttpClient getHttpClient() {
-        return prerenderConfig.getHttpClient();
+        this.prerenderService = new PrerenderService(new PrerenderConfig(filterConfig));
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
+        boolean isPrerendered = prerenderService.tryPrerender(
+                (HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse);
+        if (!isPrerendered) {
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        prerenderService.destroy();
+    }
+
+    protected void setPrerenderService(PrerenderService prerenderService) {
+        this.prerenderService = prerenderService;
+    }
+}
+
+class PrerenderService {
+
+    public static final int HTTP_OK = 200;
+    private CloseableHttpClient httpClient;
+    private PrerenderConfig prerenderConfig;
+    private PreRenderEventHandler preRenderEventHandler;
+
+    /**
+     * These are the "hop-by-hop" headers that should not be copied.
+     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
+     * I use an HttpClient HeaderGroup class instead of Set<String> because this
+     * approach does case insensitive lookup faster.
+     */
+    protected static final HeaderGroup hopByHopHeaders;
+
+    public PrerenderService(PrerenderConfig prerenderConfig) {
+        this.prerenderConfig = prerenderConfig;
+        this.httpClient = getHttpClient();
+    }
+
+    static {
+        hopByHopHeaders = new HeaderGroup();
+        String[] headers = new String[]{
+                "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+                "TE", "Trailers", "Transfer-Encoding", "Upgrade"};
+        for (String header : headers) {
+            hopByHopHeaders.addHeader(new BasicHeader(header, null));
+        }
+    }
+
+    public void destroy() {
+        if (preRenderEventHandler != null) {
+            preRenderEventHandler.destroy();
+        }
+        closeQuietly(httpClient);
+    }
+
+    public boolean tryPrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         try {
-            final HttpServletRequest request = (HttpServletRequest) servletRequest;
-            final HttpServletResponse response = (HttpServletResponse) servletResponse;
-            if (shouldShowPrerenderedPage(request)) {
-                this.preRenderEventHandler = prerenderConfig.getEventHandler();
-                if (beforeRender(request, response) || proxyPrerenderedPageResponse(request, response)) {
-                    return;
-                }
-            }
+            if (handlePrerender(servletRequest, servletResponse))
+                return true;
         } catch (Exception e) {
             log.error("Prerender service error", e);
         }
-        filterChain.doFilter(servletRequest, servletResponse);
+        return false;
+    }
+
+    private boolean handlePrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+            throws URISyntaxException, IOException {
+        if (shouldShowPrerenderedPage(servletRequest)) {
+            this.preRenderEventHandler = prerenderConfig.getEventHandler();
+            if (beforeRender(servletRequest, servletResponse) || proxyPrerenderedPageResponse(servletRequest, servletResponse)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasEscapedFragment(HttpServletRequest request) {
+        return request.getParameterMap().containsKey("_escaped_fragment_");
+    }
+
+    public String getApiUrl(String url) {
+        String prerenderServiceUrl = prerenderConfig.getPrerenderServiceUrl();
+        if (!prerenderServiceUrl.endsWith("/")) {
+            prerenderServiceUrl += "/";
+        }
+        return prerenderServiceUrl + url;
+    }
+
+    private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
+        return from(blacklist).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String regex) {
+                final Pattern pattern = Pattern.compile(regex);
+                return pattern.matcher(url).matches() ||
+                        (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
+            }
+        });
+    }
+
+    private boolean isInSearchUserAgent(final String userAgent) {
+        return from(prerenderConfig.getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String item) {
+                return userAgent.toLowerCase().indexOf(item.toLowerCase()) >= 0;
+            }
+        });
+    }
+
+    private final static Logger log = LoggerFactory.getLogger(PrerenderService.class);
+
+    public boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
+        final String userAgent = request.getHeader("User-Agent");
+        final String url = getRequestURL(request);
+        final String referer = request.getHeader("Referer");
+
+        log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
+
+        if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
+            log.trace("Request is not HTTP GET; intercept: no");
+            return false;
+        }
+
+        if (isInResources(url)) {
+            log.trace("request is for a (static) resource; intercept: no");
+            return false;
+        }
+
+        final List<String> whiteList = prerenderConfig.getWhitelist();
+        if (whiteList != null && !isInWhiteList(url, whiteList)) {
+            log.trace("Whitelist is enabled, but this request is not listed; intercept: no");
+            return false;
+        }
+
+        final List<String> blacklist = prerenderConfig.getBlacklist();
+        if (blacklist != null && isInBlackList(url, referer, blacklist)) {
+            log.trace("Blacklist is enabled, and this request is listed; intercept: no");
+            return false;
+        }
+
+        if (hasEscapedFragment(request)) {
+            log.trace("Request Has _escaped_fragment_; intercept: yes");
+            return true;
+        }
+
+        if (StringUtils.isBlank(userAgent)) {
+            log.trace("Request has blank userAgent; intercept: no");
+            return false;
+        }
+
+        if (!isInSearchUserAgent(userAgent)) {
+            log.trace("Request User-Agent is not a search bot; intercept: no");
+            return false;
+        }
+
+        log.trace(String.format("Defaulting to request intercept(user-agent=%s): yes", userAgent));
+        return true;
+    }
+
+
+    public String getRequestURL(HttpServletRequest request) {
+        if (prerenderConfig.getForwardedURLHeader() != null) {
+            String url = request.getHeader(prerenderConfig.getForwardedURLHeader());
+            if (url != null) {
+                return url;
+            }
+        }
+        return request.getRequestURL().toString();
+    }
+
+    private boolean isInResources(final String url) {
+        return from(prerenderConfig.getExtensionsToIgnore()).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String item) {
+                return url.contains(item.toLowerCase());
+            }
+        });
+    }
+
+    private boolean isInWhiteList(final String url, List<String> whitelist) {
+        return from(whitelist).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String regex) {
+                return Pattern.compile(regex).matcher(url).matches();
+            }
+        });
     }
 
     private boolean beforeRender(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -98,10 +259,6 @@ public class PreRenderSEOFilter implements Filter {
             closeQuietly(proxyResponse);
         }
         return false;
-    }
-
-    protected HttpGet getHttpGet(String apiUrl) {
-        return new HttpGet(apiUrl);
     }
 
     private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse, String html) {
@@ -158,22 +315,13 @@ public class PreRenderSEOFilter implements Filter {
         }
     }
 
-    /**
-     * These are the "hop-by-hop" headers that should not be copied.
-     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
-     * I use an HttpClient HeaderGroup class instead of Set<String> because this
-     * approach does case insensitive lookup faster.
-     */
-    protected static final HeaderGroup hopByHopHeaders;
-
-    static {
-        hopByHopHeaders = new HeaderGroup();
-        String[] headers = new String[]{
-                "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
-                "TE", "Trailers", "Transfer-Encoding", "Upgrade"};
-        for (String header : headers) {
-            hopByHopHeaders.addHeader(new BasicHeader(header, null));
+    private String getFullUrl(HttpServletRequest request) {
+        final String url = getRequestURL(request);
+        final String queryString = request.getQueryString();
+        if (queryString != null) {
+            return url + '?' + queryString;
         }
+        return url;
     }
 
     /**
@@ -207,131 +355,12 @@ public class PreRenderSEOFilter implements Filter {
         }
     }
 
-    private String getRequestURL(HttpServletRequest request) {
-        if (prerenderConfig.getForwardedURLHeader() != null) {
-            String url = request.getHeader(prerenderConfig.getForwardedURLHeader());
-            if (url != null) {
-                return url;
-            }
-        }
-        return request.getRequestURL().toString();
+
+    protected HttpGet getHttpGet(String apiUrl) {
+        return new HttpGet(apiUrl);
     }
 
-    private String getFullUrl(HttpServletRequest request) {
-        final String url = getRequestURL(request);
-        final String queryString = request.getQueryString();
-        if (queryString != null) {
-            return url + '?' + queryString;
-        }
-        return url;
+    protected CloseableHttpClient getHttpClient() {
+        return prerenderConfig.getHttpClient();
     }
-
-    @Override
-    public void destroy() {
-        prerenderConfig = null;
-        if (preRenderEventHandler != null) {
-            preRenderEventHandler.destroy();
-            preRenderEventHandler = null;
-        }
-        closeQuietly(httpClient);
-    }
-
-    private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
-        final String userAgent = request.getHeader("User-Agent");
-        final String url = getRequestURL(request);
-        final String referer = request.getHeader("Referer");
-
-        log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
-
-        if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-            log.trace("Request is not HTTP GET; intercept: no");
-            return false;
-        }
-
-        if (isInResources(url)) {
-            log.trace("request is for a (static) resource; intercept: no");
-            return false;
-        }
-
-        final List<String> whiteList = prerenderConfig.getWhitelist();
-        if (whiteList != null && !isInWhiteList(url, whiteList)) {
-            log.trace("Whitelist is enabled, but this request is not listed; intercept: no");
-            return false;
-        }
-
-        final List<String> blacklist = prerenderConfig.getBlacklist();
-        if (blacklist != null && isInBlackList(url, referer, blacklist)) {
-            log.trace("Blacklist is enabled, and this request is listed; intercept: no");
-            return false;
-        }
-
-        if (hasEscapedFragment(request)) {
-            log.trace("Request Has _escaped_fragment_; intercept: yes");
-            return true;
-        }
-
-        if (StringUtils.isBlank(userAgent)) {
-            log.trace("Request has blank userAgent; intercept: no");
-            return false;
-        }
-
-        if (!isInSearchUserAgent(userAgent)) {
-            log.trace("Request User-Agent is not a search bot; intercept: no");
-            return false;
-        }
-
-        log.trace(String.format("Defaulting to request intercept(user-agent=%s): yes", userAgent));
-        return true;
-    }
-
-    private boolean hasEscapedFragment(HttpServletRequest request) {
-        return request.getParameterMap().containsKey("_escaped_fragment_");
-    }
-
-    private String getApiUrl(String url) {
-        String prerenderServiceUrl = prerenderConfig.getPrerenderServiceUrl();
-        if (!prerenderServiceUrl.endsWith("/")) {
-            prerenderServiceUrl += "/";
-        }
-        return prerenderServiceUrl + url;
-    }
-
-    private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
-        return from(blacklist).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String regex) {
-                final Pattern pattern = Pattern.compile(regex);
-                return pattern.matcher(url).matches() ||
-                        (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
-            }
-        });
-    }
-
-    private boolean isInWhiteList(final String url, List<String> whitelist) {
-        return from(whitelist).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String regex) {
-                return Pattern.compile(regex).matcher(url).matches();
-            }
-        });
-    }
-
-    private boolean isInResources(final String url) {
-        return from(prerenderConfig.getExtensionsToIgnore()).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String item) {
-                return url.contains(item.toLowerCase());
-            }
-        });
-    }
-
-    private boolean isInSearchUserAgent(final String userAgent) {
-        return from(prerenderConfig.getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String item) {
-                return userAgent.toLowerCase().indexOf(item.toLowerCase()) >= 0;
-            }
-        });
-    }
-
 }
