@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 
 import static com.google.common.collect.FluentIterable.from;
 
-class PrerenderSeoService {
+public class PrerenderSeoService {
     public static final int HTTP_OK = 200;
     private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
     /**
