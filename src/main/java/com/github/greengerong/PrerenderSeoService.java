@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.FluentIterable.from;
 
 class PrerenderSeoService {
+    private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
 
     public static final int HTTP_OK = 200;
     private CloseableHttpClient httpClient;
@@ -39,7 +40,7 @@ class PrerenderSeoService {
      * I use an HttpClient HeaderGroup class instead of Set<String> because this
      * approach does case insensitive lookup faster.
      */
-    protected static final HeaderGroup hopByHopHeaders;
+    private static final HeaderGroup hopByHopHeaders;
 
     public PrerenderSeoService(PrerenderConfig prerenderConfig) {
         this.prerenderConfig = prerenderConfig;
@@ -63,10 +64,11 @@ class PrerenderSeoService {
         closeQuietly(httpClient);
     }
 
-    public boolean tryPrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    public boolean prerenderIfEligible(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         try {
-            if (handlePrerender(servletRequest, servletResponse))
+            if (handlePrerender(servletRequest, servletResponse)) {
                 return true;
+            }
         } catch (Exception e) {
             log.error("Prerender service error", e);
         }
@@ -84,41 +86,7 @@ class PrerenderSeoService {
         return false;
     }
 
-    private boolean hasEscapedFragment(HttpServletRequest request) {
-        return request.getParameterMap().containsKey("_escaped_fragment_");
-    }
-
-    public String getApiUrl(String url) {
-        String prerenderServiceUrl = prerenderConfig.getPrerenderServiceUrl();
-        if (!prerenderServiceUrl.endsWith("/")) {
-            prerenderServiceUrl += "/";
-        }
-        return prerenderServiceUrl + url;
-    }
-
-    private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
-        return from(blacklist).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String regex) {
-                final Pattern pattern = Pattern.compile(regex);
-                return pattern.matcher(url).matches() ||
-                        (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
-            }
-        });
-    }
-
-    private boolean isInSearchUserAgent(final String userAgent) {
-        return from(prerenderConfig.getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
-            @Override
-            public boolean apply(String item) {
-                return userAgent.toLowerCase().contains(item.toLowerCase());
-            }
-        });
-    }
-
-    private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
-
-    public boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
+    private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
         final String userAgent = request.getHeader("User-Agent");
         final String url = getRequestURL(request);
         final String referer = request.getHeader("Referer");
@@ -166,8 +134,47 @@ class PrerenderSeoService {
         return true;
     }
 
+    protected HttpGet getHttpGet(String apiUrl) {
+        return new HttpGet(apiUrl);
+    }
 
-    public String getRequestURL(HttpServletRequest request) {
+    protected CloseableHttpClient getHttpClient() {
+        return prerenderConfig.getHttpClient();
+    }
+
+    /**
+     * Copy request headers from the servlet client to the proxy request.
+     *
+     * @throws java.net.URISyntaxException
+     */
+    private void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest)
+            throws URISyntaxException {
+        // Get an Enumeration of all of the header names sent by the client
+        Enumeration<?> enumerationOfHeaderNames = servletRequest.getHeaderNames();
+        while (enumerationOfHeaderNames.hasMoreElements()) {
+            String headerName = (String) enumerationOfHeaderNames.nextElement();
+            //Instead the content-length is effectively set via InputStreamEntity
+            if (!headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) && !hopByHopHeaders.containsHeader(headerName)) {
+                Enumeration<?> headers = servletRequest.getHeaders(headerName);
+                while (headers.hasMoreElements()) {//sometimes more than one value
+                    String headerValue = (String) headers.nextElement();
+                    // In case the proxy host is running multiple virtual servers,
+                    // rewrite the Host header to ensure that we get content from
+                    // the correct virtual server
+                    if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
+                        HttpHost host = URIUtils.extractHost(new URI(prerenderConfig.getPrerenderServiceUrl()));
+                        headerValue = host.getHostName();
+                        if (host.getPort() != -1) {
+                            headerValue += ":" + host.getPort();
+                        }
+                    }
+                    proxyRequest.addHeader(headerName, headerValue);
+                }
+            }
+        }
+    }
+
+    private String getRequestURL(HttpServletRequest request) {
         if (prerenderConfig.getForwardedURLHeader() != null) {
             String url = request.getHeader(prerenderConfig.getForwardedURLHeader());
             if (url != null) {
@@ -176,6 +183,81 @@ class PrerenderSeoService {
         }
         return request.getRequestURL().toString();
     }
+
+    private String getApiUrl(String url) {
+        String prerenderServiceUrl = prerenderConfig.getPrerenderServiceUrl();
+        if (!prerenderServiceUrl.endsWith("/")) {
+            prerenderServiceUrl += "/";
+        }
+        return prerenderServiceUrl + url;
+    }
+
+    /**
+     * Copy proxied response headers back to the servlet client.
+     */
+    private void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
+        for (Header header : proxyResponse.getAllHeaders()) {
+            if (!hopByHopHeaders.containsHeader(header.getName())) {
+                servletResponse.addHeader(header.getName(), header.getValue());
+            }
+        }
+    }
+
+    /**
+     * Copy response body data (the entity) from the proxy to the servlet client.
+     */
+    private String copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse)
+            throws IOException {
+        HttpEntity entity = proxyResponse.getEntity();
+        if (entity != null) {
+            PrintWriter printWriter = servletResponse.getWriter();
+            try {
+                final String html = EntityUtils.toString(entity);
+                printWriter.write(html);
+                printWriter.flush();
+                return html;
+            } finally {
+                closeQuietly(printWriter);
+            }
+        }
+        return "";
+    }
+
+
+    protected void closeQuietly(Closeable closeable) {
+        try {
+            if (closeable != null) {
+                closeable.close();
+            }
+        } catch (IOException e) {
+            log.error("Close proxy error", e);
+        }
+    }
+
+    private boolean hasEscapedFragment(HttpServletRequest request) {
+        return request.getParameterMap().containsKey("_escaped_fragment_");
+    }
+
+    private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
+        return from(blacklist).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String regex) {
+                final Pattern pattern = Pattern.compile(regex);
+                return pattern.matcher(url).matches() ||
+                        (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
+            }
+        });
+    }
+
+    private boolean isInSearchUserAgent(final String userAgent) {
+        return from(prerenderConfig.getCrawlerUserAgents()).anyMatch(new Predicate<String>() {
+            @Override
+            public boolean apply(String item) {
+                return userAgent.toLowerCase().contains(item.toLowerCase());
+            }
+        });
+    }
+
 
     private boolean isInResources(final String url) {
         return from(prerenderConfig.getExtensionsToIgnore()).anyMatch(new Predicate<String>() {
@@ -246,47 +328,6 @@ class PrerenderSeoService {
         }
     }
 
-    /**
-     * Copy proxied response headers back to the servlet client.
-     */
-    protected void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
-        for (Header header : proxyResponse.getAllHeaders()) {
-            if (!hopByHopHeaders.containsHeader(header.getName())) {
-                servletResponse.addHeader(header.getName(), header.getValue());
-            }
-        }
-    }
-
-    /**
-     * Copy response body data (the entity) from the proxy to the servlet client.
-     */
-    protected String copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse)
-            throws IOException {
-        HttpEntity entity = proxyResponse.getEntity();
-        if (entity != null) {
-            PrintWriter printWriter = servletResponse.getWriter();
-            try {
-                final String html = EntityUtils.toString(entity);
-                printWriter.write(html);
-                printWriter.flush();
-                return html;
-            } finally {
-                closeQuietly(printWriter);
-            }
-        }
-        return "";
-    }
-
-    protected void closeQuietly(Closeable closeable) {
-        try {
-            if (closeable != null) {
-                closeable.close();
-            }
-        } catch (IOException e) {
-            log.error("Close proxy error", e);
-        }
-    }
-
     private String getFullUrl(HttpServletRequest request) {
         final String url = getRequestURL(request);
         final String queryString = request.getQueryString();
@@ -294,46 +335,5 @@ class PrerenderSeoService {
             return url + '?' + queryString;
         }
         return url;
-    }
-
-    /**
-     * Copy request headers from the servlet client to the proxy request.
-     *
-     * @throws java.net.URISyntaxException
-     */
-    protected void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest)
-            throws URISyntaxException {
-        // Get an Enumeration of all of the header names sent by the client
-        Enumeration<?> enumerationOfHeaderNames = servletRequest.getHeaderNames();
-        while (enumerationOfHeaderNames.hasMoreElements()) {
-            String headerName = (String) enumerationOfHeaderNames.nextElement();
-            //Instead the content-length is effectively set via InputStreamEntity
-            if (!headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) && !hopByHopHeaders.containsHeader(headerName)) {
-                Enumeration<?> headers = servletRequest.getHeaders(headerName);
-                while (headers.hasMoreElements()) {//sometimes more than one value
-                    String headerValue = (String) headers.nextElement();
-                    // In case the proxy host is running multiple virtual servers,
-                    // rewrite the Host header to ensure that we get content from
-                    // the correct virtual server
-                    if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
-                        HttpHost host = URIUtils.extractHost(new URI(prerenderConfig.getPrerenderServiceUrl()));
-                        headerValue = host.getHostName();
-                        if (host.getPort() != -1) {
-                            headerValue += ":" + host.getPort();
-                        }
-                    }
-                    proxyRequest.addHeader(headerName, headerValue);
-                }
-            }
-        }
-    }
-
-
-    protected HttpGet getHttpGet(String apiUrl) {
-        return new HttpGet(apiUrl);
-    }
-
-    protected CloseableHttpClient getHttpClient() {
-        return prerenderConfig.getHttpClient();
     }
 }

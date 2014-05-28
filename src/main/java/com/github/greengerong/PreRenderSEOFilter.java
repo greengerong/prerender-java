@@ -24,7 +24,7 @@ public class PreRenderSEOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        boolean isPrerendered = prerenderSeoService.tryPrerender(
+        boolean isPrerendered = prerenderSeoService.prerenderIfEligible(
                 (HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse);
         if (!isPrerendered) {
             filterChain.doFilter(servletRequest, servletResponse);
