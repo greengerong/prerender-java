@@ -18,7 +18,7 @@ public class PreRenderSEOFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.prerenderSeoService = new PrerenderSeoService(new PrerenderConfig(toMap(filterConfig)));
+        this.prerenderSeoService = new PrerenderSeoService(toMap(filterConfig));
     }
 
     @Override

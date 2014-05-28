@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.google.common.collect.FluentIterable.from;
@@ -40,8 +41,8 @@ class PrerenderSeoService {
     private PrerenderConfig prerenderConfig;
     private PreRenderEventHandler preRenderEventHandler;
 
-    public PrerenderSeoService(PrerenderConfig prerenderConfig) {
-        this.prerenderConfig = prerenderConfig;
+    public PrerenderSeoService(Map<String, String> config) {
+        this.prerenderConfig = new PrerenderConfig(config);
         this.httpClient = getHttpClient();
     }
 
