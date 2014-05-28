@@ -27,13 +27,8 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.FluentIterable.from;
 
 class PrerenderSeoService {
-    private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
-
     public static final int HTTP_OK = 200;
-    private CloseableHttpClient httpClient;
-    private PrerenderConfig prerenderConfig;
-    private PreRenderEventHandler preRenderEventHandler;
-
+    private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
     /**
      * These are the "hop-by-hop" headers that should not be copied.
      * http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
@@ -41,6 +36,9 @@ class PrerenderSeoService {
      * approach does case insensitive lookup faster.
      */
     private static final HeaderGroup hopByHopHeaders;
+    private CloseableHttpClient httpClient;
+    private PrerenderConfig prerenderConfig;
+    private PreRenderEventHandler preRenderEventHandler;
 
     public PrerenderSeoService(PrerenderConfig prerenderConfig) {
         this.prerenderConfig = prerenderConfig;
