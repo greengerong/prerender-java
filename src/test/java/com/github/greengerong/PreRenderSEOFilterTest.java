@@ -52,7 +52,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter = new PreRenderSEOFilter() {
             @Override
             public void init(FilterConfig filterConfig) throws ServletException {
-                setPrerenderService(new PrerenderService(new PrerenderConfig(filterConfig)) {
+                setPrerenderSeoService(new PrerenderSeoService(new PrerenderConfig(toMap(filterConfig))) {
                     @Override
                     protected CloseableHttpClient getHttpClient() {
                         return httpClient;
@@ -97,7 +97,7 @@ public class PreRenderSEOFilterTest {
         final HashMap<String, String> map = Maps.newHashMap();
         map.put("_escaped_fragment_", "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
@@ -199,7 +199,7 @@ public class PreRenderSEOFilterTest {
         final HashMap<String, String> map = Maps.newHashMap();
         map.put("_escaped_fragment_", "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
 
         //when
@@ -262,7 +262,7 @@ public class PreRenderSEOFilterTest {
         final HashMap<String, String> map = Maps.newHashMap();
         map.put("_escaped_fragment_", "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
 
         //when
@@ -295,7 +295,7 @@ public class PreRenderSEOFilterTest {
         final HashMap<String, String> map = Maps.newHashMap();
         map.put("_escaped_fragment_", "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
 
         //when
