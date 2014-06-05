@@ -88,6 +88,7 @@ public class PreRenderSEOFilter implements Filter {
 
         try {
             proxyResponse = httpClient.execute(getMethod);
+            response.setStatus(proxyResponse.getStatusLine().getStatusCode());
             copyResponseHeaders(proxyResponse, response);
             final String html = copyResponseEntity(proxyResponse, response);
             afterRender(request, proxyResponse, html);

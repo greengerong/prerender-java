@@ -232,6 +232,7 @@ public class PreRenderSEOFilterTest {
         //then
         verify(httpClient).execute(httpGet);
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
+        verify(servletResponse).setStatus(NOT_FOUND);
     }
 
 
