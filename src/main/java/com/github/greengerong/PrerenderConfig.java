@@ -12,20 +12,20 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.FilterConfig;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class PrerenderConfig {
     private final static Logger log = LoggerFactory.getLogger(PrerenderConfig.class);
-    private FilterConfig filterConfig;
+    private Map<String, String> config;
 
-    public PrerenderConfig(FilterConfig filterConfig) {
-        this.filterConfig = filterConfig;
+    public PrerenderConfig(Map<String, String> config) {
+        this.config = config;
     }
 
     public PreRenderEventHandler getEventHandler() {
-        final String preRenderEventHandler = filterConfig.getInitParameter("preRenderEventHandler");
+        final String preRenderEventHandler = config.get("preRenderEventHandler");
         if (StringUtils.isNotBlank(preRenderEventHandler)) {
             try {
                 return (PreRenderEventHandler) Class.forName(preRenderEventHandler).newInstance();
@@ -38,9 +38,9 @@ public class PrerenderConfig {
 
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
-        final String proxy = filterConfig.getInitParameter("proxy");
+        final String proxy = config.get("proxy");
         if (StringUtils.isNotBlank(proxy)) {
-            final int proxyPort = Integer.parseInt(filterConfig.getInitParameter("proxyPort"));
+            final int proxyPort = Integer.parseInt(config.get("proxyPort"));
             DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(new HttpHost(proxy, proxyPort));
             builder = builder.setRoutePlanner(routePlanner);
         }
@@ -50,17 +50,17 @@ public class PrerenderConfig {
     }
 
     public String getPrerenderToken() {
-        return filterConfig.getInitParameter("prerenderToken");
+        return config.get("prerenderToken");
     }
 
     public String getForwardedURLHeader() {
-        return filterConfig.getInitParameter("forwardedURLHeader");
+        return config.get("forwardedURLHeader");
     }
 
     public List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("googlebot", "yahoo", "bingbot", "baiduspider",
                 "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly");
-        final String crawlerUserAgentsFromConfig = filterConfig.getInitParameter("crawlerUserAgents");
+        final String crawlerUserAgentsFromConfig = config.get("crawlerUserAgents");
         if (StringUtils.isNotBlank(crawlerUserAgentsFromConfig)) {
             crawlerUserAgents.addAll(Arrays.asList(crawlerUserAgentsFromConfig.trim().split(",")));
         }
@@ -73,7 +73,7 @@ public class PrerenderConfig {
                 ".gif", ".pdf", ".doc", ".txt", ".zip", ".mp3", ".rar", ".exe", ".wmv", ".doc", ".avi", ".ppt", ".mpg",
                 ".mpeg", ".tif", ".wav", ".mov", ".psd", ".ai", ".xls", ".mp4", ".m4a", ".swf", ".dat", ".dmg",
                 ".iso", ".flv", ".m4v", ".torrent");
-        final String extensionsToIgnoreFromConfig = filterConfig.getInitParameter("extensionsToIgnore");
+        final String extensionsToIgnoreFromConfig = config.get("extensionsToIgnore");
         if (StringUtils.isNotBlank(extensionsToIgnoreFromConfig)) {
             extensionsToIgnore.addAll(Arrays.asList(extensionsToIgnoreFromConfig.trim().split(",")));
         }
@@ -82,7 +82,7 @@ public class PrerenderConfig {
     }
 
     public List<String> getWhitelist() {
-        final String whitelist = filterConfig.getInitParameter("whitelist");
+        final String whitelist = config.get("whitelist");
         if (StringUtils.isNotBlank(whitelist)) {
             return Arrays.asList(whitelist.trim().split(","));
         }
@@ -90,7 +90,7 @@ public class PrerenderConfig {
     }
 
     public List<String> getBlacklist() {
-        final String blacklist = filterConfig.getInitParameter("blacklist");
+        final String blacklist = config.get("blacklist");
         if (StringUtils.isNotBlank(blacklist)) {
             return Arrays.asList(blacklist.trim().split(","));
         }
@@ -98,7 +98,7 @@ public class PrerenderConfig {
     }
 
     public String getPrerenderServiceUrl() {
-        final String prerenderServiceUrl = filterConfig.getInitParameter("prerenderServiceUrl");
+        final String prerenderServiceUrl = config.get("prerenderServiceUrl");
         return StringUtils.isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : "http://service.prerender.io/";
     }
 }
