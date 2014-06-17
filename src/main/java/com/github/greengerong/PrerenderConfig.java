@@ -4,6 +4,7 @@ package com.github.greengerong;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -38,15 +39,33 @@ public class PrerenderConfig {
 
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
+        builder = configureProxy(builder);
+        builder = configureTimeout(builder);
+        builder = builder.setConnectionManager(new PoolingHttpClientConnectionManager());
+        return builder.build();
+    }
+
+    private HttpClientBuilder configureProxy(HttpClientBuilder builder) {
         final String proxy = config.get("proxy");
         if (StringUtils.isNotBlank(proxy)) {
             final int proxyPort = Integer.parseInt(config.get("proxyPort"));
             DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(new HttpHost(proxy, proxyPort));
             builder = builder.setRoutePlanner(routePlanner);
         }
+        return builder;
+    }
 
-        builder = builder.setConnectionManager(new PoolingHttpClientConnectionManager());
-        return builder.build();
+    private HttpClientBuilder configureTimeout(HttpClientBuilder builder) {
+        final String socketTimeout = getSocketTimeout();
+        if (socketTimeout != null) {
+            RequestConfig config = RequestConfig.custom().setSocketTimeout(Integer.parseInt(socketTimeout)).build();
+            builder = builder.setDefaultRequestConfig(config);
+        }
+        return builder;
+    }
+
+    public String getSocketTimeout() {
+        return config.get("socketTimeout");
     }
 
     public String getPrerenderToken() {
