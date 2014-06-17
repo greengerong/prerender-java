@@ -301,16 +301,14 @@ public class PrerenderSeoService {
 
         try {
             proxyResponse = httpClient.execute(getMethod);
-            if (proxyResponse.getStatusLine().getStatusCode() == HTTP_OK) {
-                copyResponseHeaders(proxyResponse, response);
-                final String html = copyResponseEntity(proxyResponse, response);
-                afterRender(request, proxyResponse, html);
-                return true;
-            }
+            response.setStatus(proxyResponse.getStatusLine().getStatusCode());
+            copyResponseHeaders(proxyResponse, response);
+            final String html = copyResponseEntity(proxyResponse, response);
+            afterRender(request, proxyResponse, html);
+            return true;
         } finally {
             closeQuietly(proxyResponse);
         }
-        return false;
     }
 
     private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse, String html) {

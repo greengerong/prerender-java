@@ -211,7 +211,7 @@ public class PreRenderSEOFilterTest {
     }
 
     @Test
-    public void should_not_handle_when_every_thing_is_ok_but_prerender_server_response_is_not_200() throws Exception {
+    public void should_handle_when_every_thing_is_ok_but_prerender_server_response_is_not_200() throws Exception {
         //given
         when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");
         preRenderSEOFilter.init(filterConfig);
@@ -230,13 +230,15 @@ public class PreRenderSEOFilterTest {
         map.put("_escaped_fragment_", "");
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(NOT_FOUND);
+        when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
 
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
 
         //then
         verify(httpClient).execute(httpGet);
-        verify(filterChain).doFilter(servletRequest, servletResponse);
+        verify(filterChain, never()).doFilter(servletRequest, servletResponse);
+        verify(servletResponse).setStatus(NOT_FOUND);
     }
 
 
