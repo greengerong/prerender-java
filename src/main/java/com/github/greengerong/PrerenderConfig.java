@@ -88,7 +88,7 @@ public class PrerenderConfig {
     }
 
     public List<String> getExtensionsToIgnore() {
-        List<String> extensionsToIgnore = Lists.newArrayList(".js", ".css", ".less", ".png", ".jpg", ".jpeg",
+        List<String> extensionsToIgnore = Lists.newArrayList(".xml",".js", ".css", ".less", ".png", ".jpg", ".jpeg",
                 ".gif", ".pdf", ".doc", ".txt", ".zip", ".mp3", ".rar", ".exe", ".wmv", ".doc", ".avi", ".ppt", ".mpg",
                 ".mpeg", ".tif", ".wav", ".mov", ".psd", ".ai", ".xls", ".mp4", ".m4a", ".swf", ".dat", ".dmg",
                 ".iso", ".flv", ".m4v", ".torrent");
