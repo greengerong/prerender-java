@@ -84,7 +84,13 @@ public class PrerenderSeoService {
         }
         return false;
     }
+public String removeJsessionIds(String html) {
+		Pattern pattern = Pattern.compile(";jsessionid(=\\w+)");
+		Matcher m = pattern.matcher(html);
 
+		String targetHtml = m.replaceAll("");
+		return targetHtml;
+	}
     private boolean shouldShowPrerenderedPage(HttpServletRequest request) throws URISyntaxException {
         final String userAgent = request.getHeader("User-Agent");
         final String url = getRequestURL(request);
@@ -211,7 +217,10 @@ public class PrerenderSeoService {
         if (entity != null) {
             PrintWriter printWriter = servletResponse.getWriter();
             try {
-                final String html = EntityUtils.toString(entity);
+             
+                String html = EntityUtils.toString(entity);
+				//remove junk jsesioids also
+				html = removeJsessionIds(html);
                 printWriter.write(html);
                 printWriter.flush();
                 return html;
