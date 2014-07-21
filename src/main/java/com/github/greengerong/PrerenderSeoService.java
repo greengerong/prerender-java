@@ -24,7 +24,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
+import java.util.regex.Matcher;
 import static com.google.common.collect.FluentIterable.from;
 
 public class PrerenderSeoService {
