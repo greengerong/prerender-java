@@ -262,7 +262,8 @@ public class PrerenderSeoService {
         return from(prerenderConfig.getExtensionsToIgnore()).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String item) {
-                return url.contains(item.toLowerCase());
+	        		return (url.indexOf('?') >= 0 ? url.substring(0, url.indexOf('?')) : url)
+	        				.toLowerCase().endsWith(item);
             }
         });
     }
