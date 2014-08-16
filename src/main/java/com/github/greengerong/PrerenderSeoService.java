@@ -202,24 +202,24 @@ public class PrerenderSeoService {
         }
     }
 
+    private String getResponseHtml(HttpResponse proxyResponse)
+            throws IOException {
+        HttpEntity entity = proxyResponse.getEntity();
+        return entity != null ? EntityUtils.toString(entity) : "";
+    }
+
     /**
      * Copy response body data (the entity) from the proxy to the servlet client.
      */
-    private String copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse)
+    private void responseEntity(String html, HttpServletResponse servletResponse)
             throws IOException {
-        HttpEntity entity = proxyResponse.getEntity();
-        if (entity != null) {
-            PrintWriter printWriter = servletResponse.getWriter();
-            try {
-                final String html = EntityUtils.toString(entity);
-                printWriter.write(html);
-                printWriter.flush();
-                return html;
-            } finally {
-                closeQuietly(printWriter);
-            }
+        PrintWriter printWriter = servletResponse.getWriter();
+        try {
+            printWriter.write(html);
+            printWriter.flush();
+        } finally {
+            closeQuietly(printWriter);
         }
-        return "";
     }
 
 
@@ -262,8 +262,8 @@ public class PrerenderSeoService {
         return from(prerenderConfig.getExtensionsToIgnore()).anyMatch(new Predicate<String>() {
             @Override
             public boolean apply(String item) {
-	        		return (url.indexOf('?') >= 0 ? url.substring(0, url.indexOf('?')) : url)
-	        				.toLowerCase().endsWith(item);
+                return (url.indexOf('?') >= 0 ? url.substring(0, url.indexOf('?')) : url)
+                        .toLowerCase().endsWith(item);
             }
         });
     }
@@ -298,23 +298,24 @@ public class PrerenderSeoService {
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
         withPrerenderToken(getMethod);
-        CloseableHttpResponse proxyResponse = null;
+        CloseableHttpResponse prerenderServerResponse = null;
 
         try {
-            proxyResponse = httpClient.execute(getMethod);
-            response.setStatus(proxyResponse.getStatusLine().getStatusCode());
-            copyResponseHeaders(proxyResponse, response);
-            final String html = copyResponseEntity(proxyResponse, response);
-            afterRender(request, proxyResponse, html);
+            prerenderServerResponse = httpClient.execute(getMethod);
+            response.setStatus(prerenderServerResponse.getStatusLine().getStatusCode());
+            copyResponseHeaders(prerenderServerResponse, response);
+            final String html = getResponseHtml(prerenderServerResponse);
+            afterRender(request, response, prerenderServerResponse, html);
+            responseEntity(html, response);
             return true;
         } finally {
-            closeQuietly(proxyResponse);
+            closeQuietly(prerenderServerResponse);
         }
     }
 
-    private void afterRender(HttpServletRequest request, CloseableHttpResponse proxyResponse, String html) {
+    private void afterRender(HttpServletRequest clientRequest, HttpServletResponse clientResponse, CloseableHttpResponse prerenderServerResponse, String responseHtml) {
         if (preRenderEventHandler != null) {
-            preRenderEventHandler.afterRender(request, proxyResponse, html);
+            preRenderEventHandler.afterRender(clientRequest, clientResponse, prerenderServerResponse, responseHtml);
         }
     }
 

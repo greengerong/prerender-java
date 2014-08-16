@@ -18,6 +18,8 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -46,6 +48,8 @@ public class PreRenderSEOFilterTest {
 
     @Mock
     private HttpGet httpGet;
+    @Mock
+    private PrintWriter printWriter;
 
     @Before
     public void setUp() throws Exception {
@@ -99,6 +103,8 @@ public class PreRenderSEOFilterTest {
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
+        when(servletResponse.getWriter()).thenReturn(printWriter);
+
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
 
@@ -201,7 +207,7 @@ public class PreRenderSEOFilterTest {
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
-
+        when(servletResponse.getWriter()).thenReturn(printWriter);
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
 
@@ -231,6 +237,8 @@ public class PreRenderSEOFilterTest {
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(NOT_FOUND);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
+        when(servletResponse.getWriter()).thenReturn(printWriter);
+
 
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
@@ -266,6 +274,7 @@ public class PreRenderSEOFilterTest {
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
+        when(servletResponse.getWriter()).thenReturn(printWriter);
 
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
@@ -299,6 +308,7 @@ public class PreRenderSEOFilterTest {
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
+        when(servletResponse.getWriter()).thenReturn(printWriter);
 
         //when
         preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
