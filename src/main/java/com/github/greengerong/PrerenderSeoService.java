@@ -304,8 +304,8 @@ public class PrerenderSeoService {
             prerenderServerResponse = httpClient.execute(getMethod);
             response.setStatus(prerenderServerResponse.getStatusLine().getStatusCode());
             copyResponseHeaders(prerenderServerResponse, response);
-            final String html = getResponseHtml(prerenderServerResponse);
-            afterRender(request, response, prerenderServerResponse, html);
+            String html = getResponseHtml(prerenderServerResponse);
+            html = afterRender(request, response, prerenderServerResponse, html);
             responseEntity(html, response);
             return true;
         } finally {
@@ -313,10 +313,11 @@ public class PrerenderSeoService {
         }
     }
 
-    private void afterRender(HttpServletRequest clientRequest, HttpServletResponse clientResponse, CloseableHttpResponse prerenderServerResponse, String responseHtml) {
+    private String afterRender(HttpServletRequest clientRequest, HttpServletResponse clientResponse, CloseableHttpResponse prerenderServerResponse, String responseHtml) {
         if (preRenderEventHandler != null) {
-            preRenderEventHandler.afterRender(clientRequest, clientResponse, prerenderServerResponse, responseHtml);
+            return preRenderEventHandler.afterRender(clientRequest, clientResponse, prerenderServerResponse, responseHtml);
         }
+        return responseHtml;
     }
 
     private void withPrerenderToken(HttpRequest proxyRequest) {
