@@ -15,12 +15,8 @@ Use this java filter that prerenders a javascript-rendered page using an externa
           <filter-name>prerender</filter-name>
           <filter-class>com.github.greengerong.PreRenderSEOFilter</filter-class>
           <init-param>
-              <param-name>prerenderServiceUrl</param-name>
-              <param-value>http://localhost:3000</param-value>
-          </init-param>
-          <init-param>
-              <param-name>crawlerUserAgents</param-name>
-              <param-value>me</param-value>
+              <param-name>prerenderToken</param-name>
+              <param-value>[get from prerender: https://prerender.io/]</param-value>
           </init-param>
       </filter>
       <filter-mapping>
