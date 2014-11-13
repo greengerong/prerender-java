@@ -19,10 +19,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
 
+import static com.github.greengerong.PrerenderSeoService.ESCAPED_FRAGMENT_KEY;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -99,9 +100,9 @@ public class PreRenderSEOFilterTest {
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
         final HashMap<String, String> map = Maps.newHashMap();
-        map.put("_escaped_fragment_", "");
+        map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(SC_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         when(servletResponse.getWriter()).thenReturn(printWriter);
 
@@ -203,9 +204,9 @@ public class PreRenderSEOFilterTest {
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
         final HashMap<String, String> map = Maps.newHashMap();
-        map.put("_escaped_fragment_", "");
+        map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(SC_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         when(servletResponse.getWriter()).thenReturn(printWriter);
         //when
@@ -233,7 +234,7 @@ public class PreRenderSEOFilterTest {
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
         final HashMap<String, String> map = Maps.newHashMap();
-        map.put("_escaped_fragment_", "");
+        map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
         when(statusLine.getStatusCode()).thenReturn(NOT_FOUND);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
@@ -270,9 +271,9 @@ public class PreRenderSEOFilterTest {
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
         final HashMap<String, String> map = Maps.newHashMap();
-        map.put("_escaped_fragment_", "");
+        map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(SC_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         when(servletResponse.getWriter()).thenReturn(printWriter);
 
@@ -304,9 +305,9 @@ public class PreRenderSEOFilterTest {
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
         final HashMap<String, String> map = Maps.newHashMap();
-        map.put("_escaped_fragment_", "");
+        map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(PrerenderSeoService.HTTP_OK);
+        when(statusLine.getStatusCode()).thenReturn(SC_OK);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         when(servletResponse.getWriter()).thenReturn(printWriter);
 

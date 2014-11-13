@@ -1,6 +1,7 @@
 package com.github.greengerong;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +42,7 @@ public class PreRenderSEOFilter implements Filter {
     }
 
     protected Map<String, String> toMap(FilterConfig filterConfig) {
-        HashMap<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = Maps.newHashMap();
         for (String parameterName : PARAMETER_NAMES) {
             config.put(parameterName, filterConfig.getInitParameter(parameterName));
         }

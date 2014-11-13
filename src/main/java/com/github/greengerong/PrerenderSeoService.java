@@ -1,5 +1,6 @@
 package com.github.greengerong;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.*;
@@ -20,15 +21,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.google.common.collect.FluentIterable.from;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.apache.http.HttpHeaders.CONTENT_LENGTH;
+import static org.apache.http.HttpHeaders.HOST;
 
 public class PrerenderSeoService {
-    public static final int HTTP_OK = 200;
     private final static Logger log = LoggerFactory.getLogger(PrerenderSeoService.class);
     /**
      * These are the "hop-by-hop" headers that should not be copied.
@@ -37,6 +41,7 @@ public class PrerenderSeoService {
      * approach does case insensitive lookup faster.
      */
     private static final HeaderGroup hopByHopHeaders;
+    public static final String ESCAPED_FRAGMENT_KEY = "_escaped_fragment_";
     private CloseableHttpClient httpClient;
     private PrerenderConfig prerenderConfig;
     private PreRenderEventHandler preRenderEventHandler;
@@ -90,7 +95,7 @@ public class PrerenderSeoService {
         final String url = getRequestURL(request);
         final String referer = request.getHeader("Referer");
 
-        log.trace("checking request for " + url + " from User-Agent " + userAgent + " and referer " + referer);
+        log.trace(String.format("checking request for %s from User-Agent %s and referer %s", url, userAgent, referer));
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
             log.trace("Request is not HTTP GET; intercept: no");
@@ -153,14 +158,14 @@ public class PrerenderSeoService {
         while (enumerationOfHeaderNames.hasMoreElements()) {
             String headerName = (String) enumerationOfHeaderNames.nextElement();
             //Instead the content-length is effectively set via InputStreamEntity
-            if (!headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) && !hopByHopHeaders.containsHeader(headerName)) {
+            if (!headerName.equalsIgnoreCase(CONTENT_LENGTH) && !hopByHopHeaders.containsHeader(headerName)) {
                 Enumeration<?> headers = servletRequest.getHeaders(headerName);
                 while (headers.hasMoreElements()) {//sometimes more than one value
                     String headerValue = (String) headers.nextElement();
                     // In case the proxy host is running multiple virtual servers,
                     // rewrite the Host header to ensure that we get content from
                     // the correct virtual server
-                    if (headerName.equalsIgnoreCase(HttpHeaders.HOST)) {
+                    if (headerName.equalsIgnoreCase(HOST)) {
                         HttpHost host = URIUtils.extractHost(new URI(prerenderConfig.getPrerenderServiceUrl()));
                         headerValue = host.getHostName();
                         if (host.getPort() != -1) {
@@ -194,12 +199,19 @@ public class PrerenderSeoService {
     /**
      * Copy proxied response headers back to the servlet client.
      */
-    private void copyResponseHeaders(HttpResponse proxyResponse, HttpServletResponse servletResponse) {
-        for (Header header : proxyResponse.getAllHeaders()) {
-            if (!hopByHopHeaders.containsHeader(header.getName())) {
-                servletResponse.addHeader(header.getName(), header.getValue());
+    private void copyResponseHeaders(HttpResponse proxyResponse, final HttpServletResponse servletResponse) {
+        from(Arrays.asList(proxyResponse.getAllHeaders())).filter(new Predicate<Header>() {
+            @Override
+            public boolean apply(Header header) {
+                return !hopByHopHeaders.containsHeader(header.getName());
             }
-        }
+        }).transform(new Function<Header, Boolean>() {
+            @Override
+            public Boolean apply(Header header) {
+                servletResponse.addHeader(header.getName(), header.getValue());
+                return true;
+            }
+        }).toList();
     }
 
     private String getResponseHtml(HttpResponse proxyResponse)
@@ -234,7 +246,7 @@ public class PrerenderSeoService {
     }
 
     private boolean hasEscapedFragment(HttpServletRequest request) {
-        return request.getParameterMap().containsKey("_escaped_fragment_");
+        return request.getParameterMap().containsKey(ESCAPED_FRAGMENT_KEY);
     }
 
     private boolean isInBlackList(final String url, final String referer, List<String> blacklist) {
@@ -280,7 +292,7 @@ public class PrerenderSeoService {
     private boolean beforeRender(HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (preRenderEventHandler != null) {
             final String html = preRenderEventHandler.beforeRender(request);
-            if (StringUtils.isNotBlank(html)) {
+            if (isNotBlank(html)) {
                 final PrintWriter writer = response.getWriter();
                 writer.write(html);
                 writer.flush();
@@ -323,7 +335,7 @@ public class PrerenderSeoService {
     private void withPrerenderToken(HttpRequest proxyRequest) {
         final String token = prerenderConfig.getPrerenderToken();
         //for new version prerender with token.
-        if (StringUtils.isNotBlank(token)) {
+        if (isNotBlank(token)) {
             proxyRequest.addHeader("X-Prerender-Token", token);
         }
     }
@@ -331,9 +343,6 @@ public class PrerenderSeoService {
     private String getFullUrl(HttpServletRequest request) {
         final String url = getRequestURL(request);
         final String queryString = request.getQueryString();
-        if (queryString != null) {
-            return url + '?' + queryString;
-        }
-        return url;
+        return isNotBlank(queryString) ? String.format("%s?%s", url, queryString) : url;
     }
 }
