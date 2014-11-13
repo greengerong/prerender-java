@@ -75,6 +75,14 @@ public class PrerenderConfig {
     public String getForwardedURLHeader() {
         return config.get("forwardedURLHeader");
     }
+  
+    public boolean isInterceptByDefault() {
+      String interceptByDefault = config.get("interceptByDefault");
+      if(interceptByDefault != null) {
+        return Boolean.parseBoolean(interceptByDefault);
+      }
+      return true;
+    }
 
     public List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("googlebot", "yahoo", "bingbot", "baiduspider",
