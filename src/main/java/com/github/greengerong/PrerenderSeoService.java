@@ -124,18 +124,21 @@ public class PrerenderSeoService {
             return true;
         }
 
-        if (StringUtils.isBlank(userAgent)) {
-            log.trace("Request has blank userAgent; intercept: no");
-            return false;
+        boolean interceptByDefault = prerenderConfig.isInterceptByDefault();
+        if(interceptByDefault) {
+            if (StringUtils.isBlank(userAgent)) {
+                log.trace("Request has blank userAgent; intercept: no");
+                return false;
+            }
+
+            if (!isInSearchUserAgent(userAgent)) {
+               log.trace("Request User-Agent is not a search bot; intercept: no");
+               return false;
+            }
         }
 
-        if (!isInSearchUserAgent(userAgent)) {
-            log.trace("Request User-Agent is not a search bot; intercept: no");
-            return false;
-        }
-
-        log.trace(String.format("Defaulting to request intercept(user-agent=%s): yes", userAgent));
-        return true;
+        log.trace(String.format("Defaulting to request intercept(user-agent=%s): %s", userAgent, interceptByDefault ? "yes" : "no"));
+        return interceptByDefault;
     }
 
     protected HttpGet getHttpGet(String apiUrl) {
