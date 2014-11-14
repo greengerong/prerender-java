@@ -81,8 +81,9 @@ public class PrerenderConfig {
     }
 
     public List<String> getCrawlerUserAgents() {
-        List<String> crawlerUserAgents = Lists.newArrayList("googlebot", "yahoo", "bingbot", "baiduspider",
-                "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly");
+        List<String> crawlerUserAgents = Lists.newArrayList("baiduspider",
+                "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly", "quora link preview"
+                , "showyoubo", "outbrain", "pinterest", "developers.google.com/+/web/snippet", "slackbot");
         final String crawlerUserAgentsFromConfig = config.get("crawlerUserAgents");
         if (isNotBlank(crawlerUserAgentsFromConfig)) {
             crawlerUserAgents.addAll(Arrays.asList(crawlerUserAgentsFromConfig.trim().split(",")));
