@@ -23,13 +23,14 @@ import java.util.Enumeration;
 import java.util.HashMap;
 
 import static com.github.greengerong.PrerenderSeoService.ESCAPED_FRAGMENT_KEY;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.client.methods.HttpGet.METHOD_NAME;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PreRenderSEOFilterTest {
 
-    public static final int NOT_FOUND = 404;
     private PreRenderSEOFilter preRenderSEOFilter;
 
     @Mock
@@ -95,7 +96,7 @@ public class PreRenderSEOFilterTest {
         final StatusLine statusLine = mock(StatusLine.class);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
         when(httpClient.execute(httpGet)).thenReturn(httpResponse);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
@@ -120,7 +121,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter.init(filterConfig);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
         when(servletRequest.getHeader("User-Agent")).thenReturn("no");
         //when
@@ -138,7 +139,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter.init(filterConfig);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test.js"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
         //when
@@ -157,7 +158,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter.init(filterConfig);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
         //when
@@ -176,7 +177,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter.init(filterConfig);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
         //when
@@ -197,7 +198,7 @@ public class PreRenderSEOFilterTest {
         final StatusLine statusLine = mock(StatusLine.class);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
 
         when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
@@ -227,7 +228,7 @@ public class PreRenderSEOFilterTest {
         final StatusLine statusLine = mock(StatusLine.class);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
 
         when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
@@ -236,7 +237,7 @@ public class PreRenderSEOFilterTest {
         final HashMap<String, String> map = Maps.newHashMap();
         map.put(ESCAPED_FRAGMENT_KEY, "");
         when(servletRequest.getParameterMap()).thenReturn(map);
-        when(statusLine.getStatusCode()).thenReturn(NOT_FOUND);
+        when(statusLine.getStatusCode()).thenReturn(SC_NOT_FOUND);
         when(httpResponse.getAllHeaders()).thenReturn(new Header[0]);
         when(servletResponse.getWriter()).thenReturn(printWriter);
 
@@ -247,7 +248,7 @@ public class PreRenderSEOFilterTest {
         //then
         verify(httpClient).execute(httpGet);
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
-        verify(servletResponse).setStatus(NOT_FOUND);
+        verify(servletResponse).setStatus(SC_NOT_FOUND);
     }
 
 
@@ -264,7 +265,7 @@ public class PreRenderSEOFilterTest {
         final StatusLine statusLine = mock(StatusLine.class);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
 
         when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
@@ -298,7 +299,7 @@ public class PreRenderSEOFilterTest {
         final StatusLine statusLine = mock(StatusLine.class);
 
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
-        when(servletRequest.getMethod()).thenReturn(HttpGet.METHOD_NAME);
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
         when(servletRequest.getHeader("X-Forwarded-URL")).thenReturn("http://my.public.domain.com/");
 
         when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
