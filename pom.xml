@@ -3,7 +3,7 @@
 
     <groupId>com.github.greengerong</groupId>
     <artifactId>prerender-java</artifactId>
-    <version>1.6.4-SNAPSHOT</version>
+    <version>1.6.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>prerender-java</name>
@@ -38,6 +38,7 @@
         <servlet-api.version>2.5</servlet-api.version>
         <httpclient.version>4.3.1</httpclient.version>
         <slf4j.version>1.7.5</slf4j.version>
+        <jetty.version>9.0.7.v20131107</jetty.version>
     </properties>
 
     <dependencies>
@@ -84,6 +85,11 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
         </dependency>
     </dependencies>
 
