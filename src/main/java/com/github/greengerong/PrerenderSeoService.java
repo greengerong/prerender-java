@@ -200,6 +200,7 @@ public class PrerenderSeoService {
      * Copy proxied response headers back to the servlet client.
      */
     private void copyResponseHeaders(HttpResponse proxyResponse, final HttpServletResponse servletResponse) {
+        servletResponse.setCharacterEncoding(getContentCharSet(proxyResponse.getEntity()));
         from(Arrays.asList(proxyResponse.getAllHeaders())).filter(new Predicate<Header>() {
             @Override
             public boolean apply(Header header) {
@@ -212,6 +213,26 @@ public class PrerenderSeoService {
                 return true;
             }
         }).toList();
+    }
+    
+    /**
+     * Get the charset used to encode the http entity.
+     */
+    private String getContentCharSet(final HttpEntity entity) throws ParseException {
+        if (entity == null) {
+            return null;
+        }
+        String charset = null;
+        if (entity.getContentType() != null) {
+            HeaderElement values[] = entity.getContentType().getElements();
+            if (values.length > 0) {
+                NameValuePair param = values[0].getParameterByName("charset");
+                if (param != null) {
+                    charset = param.getValue();
+                }
+            }
+        }        
+        return charset;
     }
 
     private String getResponseHtml(HttpResponse proxyResponse)
