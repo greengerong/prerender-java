@@ -42,7 +42,8 @@ public class PrerenderConfig {
 
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom()
-                .setConnectionManager(new PoolingHttpClientConnectionManager());
+                .setConnectionManager(new PoolingHttpClientConnectionManager())
+                .disableRedirectHandling();
 
         configureProxy(builder);
         configureTimeout(builder);
