@@ -13,11 +13,11 @@
             <artifactId>prerender-java</artifactId>
             <version>1.6.2</version>
         </dependency>
-        <dependency>
-            <groupId>com.github.greengerong</groupId>
-            <artifactId>prerender-java-redis</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.github.greengerong</groupId>-->
+            <!--<artifactId>prerender-java-redis</artifactId>-->
+            <!--<version>0.0.1-SNAPSHOT</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

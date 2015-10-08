@@ -38,7 +38,7 @@ Use this java filter that prerenders a javascript-rendered page using an externa
 	2. Check to make sure we aren't requesting a resource (js, css, etc...)
 	3. (optional) Check to make sure the url is in the whitelist
 	4. (optional) Check to make sure the url isn't in the blacklist
-2. Make a `GET` request to the [prerender service](https://github.com/collectiveip/prerender)(phantomjs server) for the page's prerendered HTML
+2. Make a `GET` request to the [prerender service](https://github.com/prerender/prerender)(phantomjs server) for the page's prerendered HTML
 3. Return that HTML to the crawler
 
 ## Customization
@@ -56,7 +56,7 @@ We usually set the original url in an http header which is added by the reverse 
 
 ### Using your own prerender service
 
-If you've deployed the prerender service on your own, set the `PRERENDER_SERVICE_URL` environment variable so that this package points there instead. Otherwise, it will default to the service already deployed at `http://prerender.herokuapp.com`
+If you've deployed the prerender service on your own, set the `PRERENDER_SERVICE_URL` environment variable so that this package points there instead. Otherwise, it will default to the service already deployed at `http://service.prerender.io/`
 
 	$ export PRERENDER_SERVICE_URL=<new url>
 
@@ -92,16 +92,21 @@ If you want to cache the caching, analytics, log or others, you can config it. I
 
 ## Testing
 
-If you want to make sure your pages are rendering correctly:
+If your URLs use a hash-bang:
 
-1. Open the Developer Tools in Chrome (Cmd + Atl + J)
-2. Click the Settings gear in the bottom right corner.
-3. Click "Overrides" on the left side of the settings panel.
-4. Check the "User Agent" checkbox.
-6. Choose "Other..." from the User Agent dropdown.
-7. Type `googlebot` into the input box.
-8. Refresh the page (make sure to keep the developer tools open).
+    If you want to see `http://localhost:3000/#!/profiles/1234`
+    Then go to `http://localhost:3000/?_escaped_fragment_=/profiles/1234`
 
+If your URLs use push-state:
+
+    If you want to see `http://localhost:3000/profiles/1234`
+    Then go to `http://localhost:3000/profiles/1234?_escaped_fragment_=`
+    
+
+project demo test url:
+
+    http://localhost:8080/test/?_escaped_fragment_=
+    
 ## License
 
 The MIT License (MIT)

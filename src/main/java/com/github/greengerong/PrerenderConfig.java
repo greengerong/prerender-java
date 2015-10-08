@@ -2,7 +2,6 @@ package com.github.greengerong;
 
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -84,7 +83,8 @@ public class PrerenderConfig {
     public List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("baiduspider",
                 "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly", "quora link preview"
-                , "showyoubo", "outbrain", "pinterest", "developers.google.com/+/web/snippet", "slackbot");
+                , "showyoubo", "outbrain", "pinterest", "developers.google.com/+/web/snippet", "slackbot", "vkShare",
+                "W3C_Validator", "redditbot", "Applebot");
         final String crawlerUserAgentsFromConfig = config.get("crawlerUserAgents");
         if (isNotBlank(crawlerUserAgentsFromConfig)) {
             crawlerUserAgents.addAll(Arrays.asList(crawlerUserAgentsFromConfig.trim().split(",")));
@@ -94,10 +94,10 @@ public class PrerenderConfig {
     }
 
     public List<String> getExtensionsToIgnore() {
-        List<String> extensionsToIgnore = Lists.newArrayList(".xml", ".js", ".css", ".less", ".png", ".jpg", ".jpeg",
-                ".gif", ".pdf", ".doc", ".txt", ".zip", ".mp3", ".rar", ".exe", ".wmv", ".doc", ".avi", ".ppt", ".mpg",
-                ".mpeg", ".tif", ".wav", ".mov", ".psd", ".ai", ".xls", ".mp4", ".m4a", ".swf", ".dat", ".dmg",
-                ".iso", ".flv", ".m4v", ".torrent");
+        List<String> extensionsToIgnore = Lists.newArrayList(".js", ".json", ".css", ".xml", ".less", ".png", ".jpg",
+                ".jpeg", ".gif", ".pdf", ".doc", ".txt", ".ico", ".rss", ".zip", ".mp3", ".rar", ".exe", ".wmv",
+                ".doc", ".avi", ".ppt", ".mpg", ".mpeg", ".tif", ".wav", ".mov", ".psd", ".ai", ".xls", ".mp4",
+                ".m4a", ".swf", ".dat", ".dmg", ".iso", ".flv", ".m4v", ".torrent", ".woff", ".ttf");
         final String extensionsToIgnoreFromConfig = config.get("extensionsToIgnore");
         if (isNotBlank(extensionsToIgnoreFromConfig)) {
             extensionsToIgnore.addAll(Arrays.asList(extensionsToIgnoreFromConfig.trim().split(",")));
@@ -124,6 +124,11 @@ public class PrerenderConfig {
 
     public String getPrerenderServiceUrl() {
         final String prerenderServiceUrl = config.get("prerenderServiceUrl");
-        return isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : PRERENDER_IO_SERVICE_URL;
+        return isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : getDefaultPrerenderIoServiceUrl();
+    }
+
+    private String getDefaultPrerenderIoServiceUrl() {
+        final String prerenderServiceUrlInEnv = System.getProperty("PRERENDER_SERVICE_URL");
+        return isNotBlank(prerenderServiceUrlInEnv) ? prerenderServiceUrlInEnv : PRERENDER_IO_SERVICE_URL;
     }
 }
