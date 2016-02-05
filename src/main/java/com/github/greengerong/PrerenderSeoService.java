@@ -357,6 +357,9 @@ public class PrerenderSeoService {
 
     private String getFullUrl(HttpServletRequest request) {
         final String url = getRequestURL(request);
+        if(url.contains("?")) {
+            return url;
+        }
         final String queryString = request.getQueryString();
         return isNotBlank(queryString) ? String.format("%s?%s", url, queryString) : url;
     }
