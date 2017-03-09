@@ -21,6 +21,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 public class PrerenderConfig {
     private final static Logger log = LoggerFactory.getLogger(PrerenderConfig.class);
     public static final String PRERENDER_IO_SERVICE_URL = "http://service.prerender.io/";
+    public static final String SERVER_NAME = "http://movmix.com";
     private Map<String, String> config;
 
     public PrerenderConfig(Map<String, String> config) {
@@ -130,5 +131,10 @@ public class PrerenderConfig {
     private String getDefaultPrerenderIoServiceUrl() {
         final String prerenderServiceUrlInEnv = System.getProperty("PRERENDER_SERVICE_URL");
         return isNotBlank(prerenderServiceUrlInEnv) ? prerenderServiceUrlInEnv : PRERENDER_IO_SERVICE_URL;
+    }
+
+    public String getServerName() {
+        final String serverName = config.get("serverName");
+        return isNotBlank(serverName) ? serverName : SERVER_NAME;
     }
 }

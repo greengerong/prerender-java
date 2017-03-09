@@ -11,6 +11,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
 import org.apache.http.util.EntityUtils;
+import org.eclipse.jetty.server.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,6 +185,20 @@ public class PrerenderSeoService {
             if (url != null) {
                 return url;
             }
+        }
+        //workaround for jetty and rewrite since all url are rewrite to index.html
+        //and we need the original url.
+        if (request instanceof org.eclipse.jetty.server.Request){
+            StringBuilder result = new StringBuilder();
+            String server = prerenderConfig.getServerName();
+            int port = request.getServerPort();
+            if(port != 80 && port != 443){
+                result.append(String.format("%s:%s", server, port));
+            }else {
+                result.append(server);
+            }
+            result.append(((Request)request).getUri());
+            return result.toString();
         }
         return request.getRequestURL().toString();
     }
@@ -363,6 +378,9 @@ public class PrerenderSeoService {
 
     private String getFullUrl(HttpServletRequest request) {
         final String url = getRequestURL(request);
+        if(url.contains("?")) {
+            return url;
+        }
         final String queryString = request.getQueryString();
         return isNotBlank(queryString) ? String.format("%s?%s", url, queryString) : url;
     }
