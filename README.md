@@ -55,7 +55,7 @@ Important for servers behind reverse proxy that need the public url to be used f
 We usually set the original url in an http header which is added by the reverse proxy (similar to the more standard `x-forwarded-proto` and `x-forwarded-for`)
 
 ### protocol
-If you specifically want to make sure that the Prerender service queries using http or https protocol, you can set the init-param `protocol` to `https` or `http` respectively.
+If you specifically want to make sure that the Prerender service queries using https or http protocol, you can set the init-param `protocol` to `https` or `http` respectively.
 
 ### Using your own prerender service
 
