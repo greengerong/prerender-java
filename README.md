@@ -54,6 +54,9 @@ example: someproxy,someproxy1
 Important for servers behind reverse proxy that need the public url to be used for pre-rendering.
 We usually set the original url in an http header which is added by the reverse proxy (similar to the more standard `x-forwarded-proto` and `x-forwarded-for`)
 
+### protocol
+If you specifically want to make sure that the Prerender service queries using http or https protocol, you can set the init-param `protocol` to `https` or `http` respectively.
+
 ### Using your own prerender service
 
 If you've deployed the prerender service on your own, set the `PRERENDER_SERVICE_URL` environment variable so that this package points there instead. Otherwise, it will default to the service already deployed at `http://service.prerender.io/`
