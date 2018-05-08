@@ -1,20 +1,23 @@
 package com.github.greengerong;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class PreRenderSEOFilter implements Filter {
     public static final List<String> PARAMETER_NAMES = Lists.newArrayList("preRenderEventHandler", "proxy", "proxyPort",
             "prerenderToken", "forwardedURLHeader", "crawlerUserAgents", "extensionsToIgnore", "whitelist",
-            "blacklist", "prerenderServiceUrl");
+            "blacklist", "prerenderServiceUrl", "protocol");
     private PrerenderSeoService prerenderSeoService;
 
     @Override

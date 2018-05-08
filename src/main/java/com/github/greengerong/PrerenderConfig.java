@@ -79,6 +79,10 @@ public class PrerenderConfig {
     public String getForwardedURLHeader() {
         return config.get("forwardedURLHeader");
     }
+    
+    public String getProtocol() {
+        return config.get("protocol");
+    }
 
     public List<String> getCrawlerUserAgents() {
         List<String> crawlerUserAgents = Lists.newArrayList("baiduspider",
