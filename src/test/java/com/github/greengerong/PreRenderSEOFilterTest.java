@@ -170,7 +170,7 @@ public class PreRenderSEOFilterTest {
     }
 
     @Test
-    public void should_handle_when_white_list_is_not_empty_and_user_agent_is_ignored() throws Exception {
+    public void should_handle_when_url_in_whitelist_and_user_agent_is_ignored() throws Exception {
         //given
         when(filterConfig.getInitParameter("whitelist")).thenReturn("\\/test.*,\\/test1.*");
         when(filterConfig.getInitParameter("ignoreUserAgent")).thenReturn("true");
