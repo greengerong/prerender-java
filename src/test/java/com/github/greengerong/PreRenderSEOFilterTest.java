@@ -170,32 +170,6 @@ public class PreRenderSEOFilterTest {
     }
 
     @Test
-    public void should_handle_when_white_list_is_not_empty_and_url_is_in_white_list() throws Exception {
-        //given
-        when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("search-bot1,search-bot2");
-        when(filterConfig.getInitParameter("whitelist")).thenReturn("\\/test.*,\\/test1.*");
-        preRenderSEOFilter.init(filterConfig);
-        final CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
-        final StatusLine statusLine = mock(StatusLine.class);
-        // Ignore copyResponseHeaders mocks
-
-        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("/test"));
-        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
-        when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
-        when(httpClient.execute(httpGet)).thenReturn(httpResponse);
-        when(httpResponse.getStatusLine()).thenReturn(statusLine);
-        when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
-        when(servletRequest.getHeader("User-Agent")).thenReturn("human-browser"); // Regardless of User-Agent
-
-        //when
-        preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
-
-        //then
-        verify(httpClient).execute(httpGet);
-        verify(filterChain).doFilter(servletRequest, servletResponse);
-    }
-
-    @Test
     public void should_not_handle_when_black_list_is_not_empty_and_url_is_in_black_list() throws Exception {
         //given
         when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");

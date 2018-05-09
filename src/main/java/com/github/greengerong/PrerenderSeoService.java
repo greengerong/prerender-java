@@ -108,9 +108,9 @@ public class PrerenderSeoService {
         }
 
         final List<String> whiteList = prerenderConfig.getWhitelist();
-        if (whiteList != null && isInWhiteList(url, whiteList)) {
-            log.trace("Whitelist is enabled, and this request is listed; intercept: yes");
-            return true;
+        if (whiteList != null && !isInWhiteList(url, whiteList)) {
+            log.trace("Whitelist is enabled, but this request is not listed; intercept: no");
+            return false;
         }
 
         final List<String> blacklist = prerenderConfig.getBlacklist();
