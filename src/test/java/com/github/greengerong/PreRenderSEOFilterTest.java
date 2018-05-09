@@ -170,6 +170,59 @@ public class PreRenderSEOFilterTest {
     }
 
     @Test
+    public void should_handle_when_white_list_is_not_empty_and_user_agent_is_ignored() throws Exception {
+        //given
+        when(filterConfig.getInitParameter("whitelist")).thenReturn("\\/test.*,\\/test1.*");
+        when(filterConfig.getInitParameter("ignoreUserAgent")).thenReturn("true");
+        preRenderSEOFilter.init(filterConfig);
+        final CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+        final StatusLine statusLine = mock(StatusLine.class);
+        // Ignore copyResponseHeaders mocks
+
+        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("/test"));
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
+        when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
+        when(httpClient.execute(httpGet)).thenReturn(httpResponse);
+        when(httpResponse.getStatusLine()).thenReturn(statusLine);
+        when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
+        when(servletRequest.getHeader("User-Agent")).thenReturn("human-browser"); // Regardless of User-Agent
+
+        //when
+        preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
+
+        //then
+        verify(httpClient).execute(httpGet);
+        verify(filterChain).doFilter(servletRequest, servletResponse);
+    }
+
+    @Test
+    public void should_not_handle_when_url_in_whitelist_but_user_agent_is_not_ignored() throws Exception {
+        //given
+        when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");
+        when(filterConfig.getInitParameter("whitelist")).thenReturn("\\/test.*,\\/test1.*");
+        when(filterConfig.getInitParameter("ignoreUserAgent")).thenReturn("false");
+        preRenderSEOFilter.init(filterConfig);
+        final CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+        final StatusLine statusLine = mock(StatusLine.class);
+        // Ignore copyResponseHeaders mocks
+
+        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("/test"));
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
+        when(servletRequest.getHeaderNames()).thenReturn(mock(Enumeration.class));
+        when(httpClient.execute(httpGet)).thenReturn(httpResponse);
+        when(httpResponse.getStatusLine()).thenReturn(statusLine);
+        when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
+        when(servletRequest.getHeader("User-Agent")).thenReturn("human-browser");
+
+        //when
+        preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
+
+        //then
+        verify(httpClient, never()).execute(httpGet);
+        verify(filterChain).doFilter(servletRequest, servletResponse);
+    }
+
+    @Test
     public void should_not_handle_when_black_list_is_not_empty_and_url_is_in_black_list() throws Exception {
         //given
         when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");

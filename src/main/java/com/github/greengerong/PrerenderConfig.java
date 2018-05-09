@@ -127,6 +127,11 @@ public class PrerenderConfig {
         return isNotBlank(prerenderServiceUrl) ? prerenderServiceUrl : getDefaultPrerenderIoServiceUrl();
     }
 
+    public Boolean getIgnoreUserAgent() {
+        String s = config.get("ignoreUserAgent");
+        return s == null ? null : Boolean.valueOf(s);
+    }
+
     private String getDefaultPrerenderIoServiceUrl() {
         final String prerenderServiceUrlInEnv = System.getProperty("PRERENDER_SERVICE_URL");
         return isNotBlank(prerenderServiceUrlInEnv) ? prerenderServiceUrlInEnv : PRERENDER_IO_SERVICE_URL;

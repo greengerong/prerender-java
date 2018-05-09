@@ -129,7 +129,7 @@ public class PrerenderSeoService {
             return false;
         }
 
-        if (!isInSearchUserAgent(userAgent)) {
+        if (!ignoreUserAgent() && !isInSearchUserAgent(userAgent)) {
             log.trace("Request User-Agent is not a search bot; intercept: no");
             return false;
         }
@@ -279,6 +279,11 @@ public class PrerenderSeoService {
                         (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
             }
         });
+    }
+
+    private boolean ignoreUserAgent() {
+        Boolean b = prerenderConfig.getIgnoreUserAgent();
+        return b == null ? false : b;
     }
 
     private boolean isInSearchUserAgent(final String userAgent) {
