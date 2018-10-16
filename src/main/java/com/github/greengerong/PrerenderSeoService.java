@@ -106,6 +106,11 @@ public class PrerenderSeoService {
             log.trace("request is for a (static) resource; intercept: no");
             return false;
         }
+        
+        String prerenderHeader = request.getHeader("X-Prerender");
+        if (StringUtils.isNotEmpty(prerenderHeader)) {
+            return false;
+        }
 
         final List<String> whiteList = prerenderConfig.getWhitelist();
         if (whiteList != null && !isInWhiteList(url, whiteList)) {
