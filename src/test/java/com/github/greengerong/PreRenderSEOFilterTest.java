@@ -133,6 +133,25 @@ public class PreRenderSEOFilterTest {
     }
 
     @Test
+    public void should_not_handle_when_x_prerender_header_is_present() throws Exception {
+        //given
+        when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");
+        preRenderSEOFilter.init(filterConfig);
+
+        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost/test"));
+        when(servletRequest.getMethod()).thenReturn(METHOD_NAME);
+        when(servletRequest.getParameterMap()).thenReturn(Maps.<String, String>newHashMap());
+        when(servletRequest.getHeader("User-Agent")).thenReturn("crawler1");
+        when(servletRequest.getHeader("X-Prerender")).thenReturn("1");
+        //when
+        preRenderSEOFilter.doFilter(servletRequest, servletResponse, filterChain);
+
+        //then
+        verify(httpClient, never()).execute(httpGet);
+        verify(filterChain).doFilter(servletRequest, servletResponse);
+    }
+
+    @Test
     public void should_not_handle_when_url_is_a_resource() throws Exception {
         //given
         when(filterConfig.getInitParameter("crawlerUserAgents")).thenReturn("crawler1,crawler2");
