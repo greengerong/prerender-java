@@ -3,7 +3,7 @@
 
     <groupId>com.github.greengerong</groupId>
     <artifactId>prerender-java</artifactId>
-    <version>1.6.5-SNAPSHOT</version>
+    <version>1.6.5.1</version>
     <packaging>jar</packaging>
 
     <name>prerender-java</name>
@@ -39,6 +39,40 @@
         <httpclient.version>4.3.1</httpclient.version>
         <slf4j.version>1.7.5</slf4j.version>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>authx-nexus</id>
+            <url>http://nexus.authxlab.com/repository/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>authx-nexus</id>
+            <url>http://nexus.authxlab.com/repository/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>hippo</id>
+            <name>Hippo maven 2 repository.</name>
+            <url>https://maven.onehippo.com/maven2/</url>
+        </repository>
+
+        <repository>
+            <id>hippo-maven2-enterprise</id>
+            <name>Hippo Enterprise Maven 2</name>
+            <url>https://maven.onehippo.com/maven2-enterprise</url>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+        </repository>
+
+        <repository>
+            <id>authxlab-nexus</id>
+            <url>http://nexus.authxlab.com/repository/releases/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -86,19 +120,6 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <build>
         <plugins>

@@ -45,6 +45,7 @@ public class PrerenderSeoService {
     private CloseableHttpClient httpClient;
     private PrerenderConfig prerenderConfig;
     private PreRenderEventHandler preRenderEventHandler;
+    private static final String EMPTY_STRING = "";
 
     public PrerenderSeoService(Map<String, String> config) {
         this.prerenderConfig = new PrerenderConfig(config);
@@ -190,9 +191,19 @@ public class PrerenderSeoService {
                 return url;
             }
         }
+        String url = "";
         if (StringUtils.isNotEmpty(prerenderConfig.getProtocol())) {
-            String url = request.getRequestURL().toString();
-            return url.replace(request.getScheme(), prerenderConfig.getProtocol());
+            url = request.getRequestURL().toString();
+            url = url.replace(request.getScheme(), prerenderConfig.getProtocol());
+        }
+        if (prerenderConfig.getPathsToRemove() != null){
+            url = StringUtils.isNotEmpty(url)?url:request.getRequestURL().toString();
+            for(String path: prerenderConfig.getPathsToRemove()){
+                url = url.replace(path,EMPTY_STRING);
+            }
+        }
+        if(StringUtils.isNotBlank(url)){
+            return url;
         }
         return request.getRequestURL().toString();
     }

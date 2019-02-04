@@ -135,4 +135,12 @@ public class PrerenderConfig {
         final String prerenderServiceUrlInEnv = System.getProperty("PRERENDER_SERVICE_URL");
         return isNotBlank(prerenderServiceUrlInEnv) ? prerenderServiceUrlInEnv : PRERENDER_IO_SERVICE_URL;
     }
+
+    public List<String> getPathsToRemove(){
+        final String pathsToIgnoreFromConfig = config.get("pathsToIgnore");
+        if (isNotBlank(pathsToIgnoreFromConfig)) {
+            return Arrays.asList(pathsToIgnoreFromConfig.trim().split(","));
+        }
+        return null;
+    }
 }
