@@ -80,7 +80,8 @@ public class PrerenderSeoService {
             }
         } catch (Exception e) {
             log.error("Prerender service error", e);
-            System.out.println(String.format("token: %s  Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
+            log.error(String.format("token: %s  Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
+            //System.out.println(String.format("token: %s  Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
         }
         return false;
     }
@@ -88,13 +89,15 @@ public class PrerenderSeoService {
     private boolean handlePrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse,String token)
             throws URISyntaxException, IOException {
         if (shouldShowPrerenderedPage(token,servletRequest)) {
-            System.out.println(String.format("token: %s Request is Prerendered",token));
+            //System.out.println(String.format("token: %s Request is Prerendered",token));
+            log.trace(String.format("token: %s Request is Prerendered",token));
             this.preRenderEventHandler = prerenderConfig.getEventHandler();
             if (beforeRender(servletRequest, servletResponse) || proxyPrerenderedPageResponse(token,servletRequest, servletResponse)) {
                 return true;
             }
         }
-        System.out.println(String.format("token: %s Request is not Prerendered",token));
+        //System.out.println(String.format("token: %s Request is not Prerendered",token));
+        log.trace(String.format("token: %s Request is not Prerendered",token));
         return false;
     }
 
@@ -105,17 +108,17 @@ public class PrerenderSeoService {
         final String referer = request.getHeader("Referer");
 
         log.trace(String.format("token: %s checking request for %s from User-Agent %s and referer %s",token, url, userAgent, referer));
-        System.out.println(String.format("token: %s checking request for %s from User-Agent %s and referer %s",token, url, userAgent, referer));
+        //System.out.println(String.format("token: %s checking request for %s from User-Agent %s and referer %s",token, url, userAgent, referer));
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
             log.trace(String.format("token: %s Request is not HTTP GET; intercept: no"),token);
-            System.out.println(String.format("token: %s Request is not HTTP GET; intercept: no",token));
+            //System.out.println(String.format("token: %s Request is not HTTP GET; intercept: no",token));
             return false;
         }
 
         if (isInResources(url)) {
             log.trace(String.format("token: %s request is for a (static) resource; intercept: no",token));
-            System.out.println(String.format("token: %s request is for a (static) resource; intercept: no",token));
+            //System.out.println(String.format("token: %s request is for a (static) resource; intercept: no",token));
             return false;
         }
         
@@ -127,37 +130,37 @@ public class PrerenderSeoService {
         final List<String> whiteList = prerenderConfig.getWhitelist();
         if (whiteList != null && !isInWhiteList(url, whiteList)) {
             log.trace(String.format("token: %s Whitelist is enabled, but this request is not listed; intercept: no",token));
-            System.out.println(String.format("token: %s Whitelist is enabled, but this request is not listed; intercept: no",token));
+            //System.out.println(String.format("token: %s Whitelist is enabled, but this request is not listed; intercept: no",token));
             return false;
         }
 
         final List<String> blacklist = prerenderConfig.getBlacklist();
         if (blacklist != null && isInBlackList(url, referer, blacklist)) {
             log.trace(String.format("token: %s Blacklist is enabled, and this request is listed; intercept: no",token));
-            System.out.println(String.format("token: %s Blacklist is enabled, and this request is listed; intercept: no",token));
+            //System.out.println(String.format("token: %s Blacklist is enabled, and this request is listed; intercept: no",token));
             return false;
         }
 
         if (hasEscapedFragment(request)) {
             log.trace(String.format("token: %s Request Has _escaped_fragment_; intercept: yes",token));
-            System.out.println(String.format("token: %s Request Has _escaped_fragment_; intercept: yes",token));
+            //System.out.println(String.format("token: %s Request Has _escaped_fragment_; intercept: yes",token));
             return true;
         }
 
         if (StringUtils.isBlank(userAgent)) {
             log.trace(String.format("token: %s Request has blank userAgent; intercept: no",token));
-            System.out.println(String.format("token: %s Request has blank userAgent; intercept: no",token));
+            //System.out.println(String.format("token: %s Request has blank userAgent; intercept: no",token));
             return false;
         }
 
         if (!isInSearchUserAgent(userAgent)) {
             log.trace(String.format("token: %s Request User-Agent is not a search bot; intercept: no",token));
-            System.out.println(String.format("token: %s Request User-Agent is not a search bot; intercept: no",token));
+            //System.out.println(String.format("token: %s Request User-Agent is not a search bot; intercept: no",token));
             return false;
         }
 
         log.trace(String.format("token: %s Defaulting to request intercept(user-agent=%s): yes",token, userAgent));
-        System.out.println(String.format("token: %s Defaulting to request intercept(user-agent=%s): yes",token, userAgent));
+        //System.out.println(String.format("token: %s Defaulting to request intercept(user-agent=%s): yes",token, userAgent));
         return true;
     }
 
@@ -198,7 +201,8 @@ public class PrerenderSeoService {
                     }
                     // Added to avoid 301 loops due to edit-connect asking json
                     if (headerName.toLowerCase().equals(ACCEPT_HEADER)){
-                        System.out.println(String.format("token %s Setting up the ACCEPT header",token));
+                        //System.out.println(String.format("token %s Setting up the ACCEPT header",token));
+                        log.trace(String.format("token %s Setting up the ACCEPT header",token));
                         headerValue = ACCEPT_VALUE;
                     }
                     proxyRequest.addHeader(headerName, headerValue);
@@ -226,7 +230,8 @@ public class PrerenderSeoService {
             }
         }
         if(StringUtils.isNotBlank(url)){
-            System.out.println(String.format("token: %s OriginalUrl %s / NewUrl: %s",token,request.getRequestURL().toString(),url));
+            //System.out.println(String.format("token: %s OriginalUrl %s / NewUrl: %s",token,request.getRequestURL().toString(),url));
+            log.trace(String.format("token: %s OriginalUrl %s / NewUrl: %s",token,request.getRequestURL().toString(),url));
             return url;
         }
         return request.getRequestURL().toString();
@@ -372,7 +377,7 @@ public class PrerenderSeoService {
             throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(token, request));
         log.trace(String.format("token %s Prerender proxy will send request to:%s",token, apiUrl));
-        System.out.println(String.format("token %s Prerender proxy will send request to:%s", token, apiUrl));
+        //System.out.println(String.format("token %s Prerender proxy will send request to:%s", token, apiUrl));
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(token,request, getMethod);
         withPrerenderToken(getMethod);
