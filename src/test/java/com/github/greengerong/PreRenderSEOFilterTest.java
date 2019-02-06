@@ -58,7 +58,7 @@ public class PreRenderSEOFilterTest {
         preRenderSEOFilter = new PreRenderSEOFilter() {
             @Override
             public void init(FilterConfig filterConfig) throws ServletException {
-                setPrerenderSeoService(new PrerenderSeoService(toMap(filterConfig)) {
+                setPrerenderSeoService(new PrerenderSeoService(toMap(filterConfig),"") {
                     @Override
                     protected CloseableHttpClient getHttpClient() {
                         return httpClient;

@@ -20,7 +20,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 public class PrerenderConfig {
     private final static Logger log = LoggerFactory.getLogger(PrerenderConfig.class);
-    public static final String PRERENDER_IO_SERVICE_URL = "http://service.prerender.io/";
+    public static final String PRERENDER_IO_SERVICE_URL = "https://service.prerender.io/";
     private Map<String, String> config;
 
     public PrerenderConfig(Map<String, String> config) {

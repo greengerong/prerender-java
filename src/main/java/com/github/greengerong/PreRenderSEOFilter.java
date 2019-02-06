@@ -2,6 +2,7 @@ package com.github.greengerong;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.ArrayUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -18,17 +19,25 @@ public class PreRenderSEOFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.prerenderSeoService = new PrerenderSeoService(toMap(filterConfig));
+        this.prerenderSeoService = new PrerenderSeoService(toMap(filterConfig),java.util.UUID.randomUUID().toString());
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        boolean isPrerendered = prerenderSeoService.prerenderIfEligible(
-                (HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse);
-        if (!isPrerendered) {
-            filterChain.doFilter(servletRequest, servletResponse);
+        String token = java.util.UUID.randomUUID().toString();
+
+        try {
+            boolean isPrerendered = prerenderSeoService.prerenderIfEligible(
+                    (HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse,token );
+            if (!isPrerendered) {
+                filterChain.doFilter(servletRequest, servletResponse);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println(String.format("Token: %s Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
         }
+
     }
 
     @Override
