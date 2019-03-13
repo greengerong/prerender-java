@@ -414,6 +414,11 @@ public class PrerenderSeoService {
     private String getFullUrl(String token, HttpServletRequest request) {
         final String url = getRequestURL(token, request);
         final String queryString = request.getQueryString();
-        return isNotBlank(queryString) ? String.format("%s?%s", url, queryString) : url;
+        //Added by RPO
+        //If we ask to provide the querystring
+        if(prerenderConfig.getQSAppend()) {
+            return isNotBlank(queryString) ? String.format("%s?%s", url, queryString) : url;
+        }
+        return url;
     }
 }
