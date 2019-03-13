@@ -143,4 +143,11 @@ public class PrerenderConfig {
         }
         return null;
     }
+    public boolean getQSAppend(){
+        final String qsappend = config.get("qsappend");
+        if (isNotBlank(qsappend) && qsappend.trim().toLowerCase().equals("true")) {
+            return true;
+        }
+        return false;
+    }
 }
