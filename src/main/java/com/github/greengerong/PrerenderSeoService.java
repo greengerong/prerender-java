@@ -5,6 +5,7 @@ import com.google.common.base.Predicate;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.*;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIUtils;
@@ -381,6 +382,8 @@ public class PrerenderSeoService {
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(token,request, getMethod);
         withPrerenderToken(getMethod);
+        //Added logic to set timeout on request
+        withRequestConfig(getMethod);
         CloseableHttpResponse prerenderServerResponse = null;
 
         try {
@@ -409,6 +412,13 @@ public class PrerenderSeoService {
         if (isNotBlank(token)) {
             proxyRequest.addHeader("X-Prerender-Token", token);
         }
+    }
+    private void withRequestConfig(HttpGet proxyRequest){
+        RequestConfig.Builder requestConfig = RequestConfig.custom();
+        requestConfig.setConnectTimeout(prerenderConfig.getRequestTimeOut());
+        requestConfig.setConnectionRequestTimeout(prerenderConfig.getRequestTimeOut());
+        requestConfig.setSocketTimeout(prerenderConfig.getRequestTimeOut());
+        proxyRequest.setConfig(requestConfig.build());
     }
 
     private String getFullUrl(String token, HttpServletRequest request) {

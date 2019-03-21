@@ -20,6 +20,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 public class PrerenderConfig {
     private final static Logger log = LoggerFactory.getLogger(PrerenderConfig.class);
+    private final static int REQUEST_TIME_OUT = 3000;
     public static final String PRERENDER_IO_SERVICE_URL = "https://service.prerender.io/";
     private Map<String, String> config;
 
@@ -149,5 +150,14 @@ public class PrerenderConfig {
             return true;
         }
         return false;
+    }
+    public int getRequestTimeOut(){
+        final String requestTimeOut = config.get("requestTimeOut");
+        if (isNotBlank(requestTimeOut)) {
+            try{ return Integer.parseInt(requestTimeOut);}finally {
+                return REQUEST_TIME_OUT;
+            }
+        }
+        return REQUEST_TIME_OUT;
     }
 }
