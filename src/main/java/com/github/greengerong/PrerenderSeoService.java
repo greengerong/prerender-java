@@ -112,7 +112,7 @@ public class PrerenderSeoService {
         //System.out.println(String.format("token: %s checking request for %s from User-Agent %s and referer %s",token, url, userAgent, referer));
 
         if (!HttpGet.METHOD_NAME.equals(request.getMethod())) {
-            log.trace(String.format("token: %s Request is not HTTP GET; intercept: no"),token);
+            log.trace(String.format("token: %s Request is not HTTP GET; intercept: no",token));
             //System.out.println(String.format("token: %s Request is not HTTP GET; intercept: no",token));
             return false;
         }
