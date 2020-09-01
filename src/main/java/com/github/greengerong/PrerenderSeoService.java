@@ -13,6 +13,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
 import org.apache.http.util.EntityUtils;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -256,6 +257,11 @@ public class PrerenderSeoService {
             public boolean apply(Header header) {
                 return !hopByHopHeaders.containsHeader(header.getName());
             }
+
+            @Override
+            public boolean test(@Nullable Header input) {
+                return false;
+            }
         }).transform(new Function<Header, Boolean>() {
             @Override
             public Boolean apply(Header header) {
@@ -328,6 +334,11 @@ public class PrerenderSeoService {
                 return pattern.matcher(url).matches() ||
                         (!StringUtils.isBlank(referer) && pattern.matcher(referer).matches());
             }
+
+            @Override
+            public boolean test(@Nullable String input) {
+                return false;
+            }
         });
     }
 
@@ -336,6 +347,11 @@ public class PrerenderSeoService {
             @Override
             public boolean apply(String item) {
                 return userAgent.toLowerCase().contains(item.toLowerCase());
+            }
+
+            @Override
+            public boolean test(@Nullable String input) {
+                return false;
             }
         });
     }
@@ -348,6 +364,11 @@ public class PrerenderSeoService {
                 return (url.indexOf('?') >= 0 ? url.substring(0, url.indexOf('?')) : url)
                         .toLowerCase().endsWith(item);
             }
+
+            @Override
+            public boolean test(@Nullable String input) {
+                return false;
+            }
         });
     }
 
@@ -356,6 +377,11 @@ public class PrerenderSeoService {
             @Override
             public boolean apply(String regex) {
                 return Pattern.compile(regex).matcher(url).matches();
+            }
+
+            @Override
+            public boolean test(@Nullable String input) {
+                return false;
             }
         });
     }
