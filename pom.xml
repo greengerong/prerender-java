@@ -3,7 +3,7 @@
 
     <groupId>com.github.greengerong</groupId>
     <artifactId>prerender-java</artifactId>
-    <version>1.6.5.2</version>
+    <version>1.6.6</version>
     <packaging>jar</packaging>
 
     <name>prerender-java</name>
@@ -32,12 +32,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>4.11</junit.version>
         <mockito.version>1.9.5</mockito.version>
-        <guava.version>15.0</guava.version>
+        <guava.version>27.0-jre</guava.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-io.version>2.4</commons-io.version>
-        <servlet-api.version>2.5</servlet-api.version>
-        <httpclient.version>4.3.1</httpclient.version>
-        <slf4j.version>1.7.5</slf4j.version>
+        <commons-io.version>2.6</commons-io.version>
+        <servlet-api.version>3.1.0</servlet-api.version>
+        <httpclient.version>4.5.6</httpclient.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <distributionManagement>
@@ -105,7 +105,7 @@
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
             <version>${servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
