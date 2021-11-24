@@ -79,7 +79,7 @@ public class PrerenderConfig {
     public String getForwardedURLHeader() {
         return config.get("forwardedURLHeader");
     }
-    
+
     public String getProtocol() {
         return config.get("protocol");
     }
@@ -88,7 +88,9 @@ public class PrerenderConfig {
         List<String> crawlerUserAgents = Lists.newArrayList("baiduspider",
                 "facebookexternalhit", "twitterbot", "rogerbot", "linkedinbot", "embedly", "quora link preview"
                 , "showyoubo", "outbrain", "pinterest", "developers.google.com/+/web/snippet", "slackbot", "vkShare",
-                "W3C_Validator", "redditbot", "Applebot");
+                "W3C_Validator", "redditbot", "Applebot", "whatsapp", "flipboard", "tumblr", "bitlybot",
+                "skypeuripreview", "nuzzel", "discordbot", "google page speed", "qwantify", "pinterestbot",
+                "bitrix link preview", "xing-contenttabreceiver", "chrome-lighthouse", "telegrambot");
         final String crawlerUserAgentsFromConfig = config.get("crawlerUserAgents");
         if (isNotBlank(crawlerUserAgentsFromConfig)) {
             crawlerUserAgents.addAll(Arrays.asList(crawlerUserAgentsFromConfig.trim().split(",")));
