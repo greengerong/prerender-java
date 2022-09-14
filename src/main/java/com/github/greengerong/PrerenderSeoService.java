@@ -77,34 +77,30 @@ public class PrerenderSeoService {
 
     public boolean prerenderIfEligible(HttpServletRequest servletRequest, HttpServletResponse servletResponse, String token) {
         try {
-            if (handlePrerender(servletRequest, servletResponse,token)) {
+            if (handlePrerender(servletRequest, servletResponse, token)) {
                 return true;
             }
         } catch (Exception e) {
             log.error("Prerender service error", e);
-            log.error(String.format("token: %s  Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
-            //System.out.println(String.format("token: %s  Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
+            log.error(String.format("token: %s  Exception: %s \n StackTrace: \n%s", token, e, ArrayUtils.toString(e.getStackTrace())));
         }
         return false;
     }
 
-    private boolean handlePrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse,String token)
-            throws URISyntaxException, IOException {
+    protected boolean handlePrerender(HttpServletRequest servletRequest, HttpServletResponse servletResponse, String token) throws URISyntaxException, IOException {
         if (shouldShowPrerenderedPage(token,servletRequest)) {
-            //System.out.println(String.format("token: %s Request is Prerendered",token));
             log.trace(String.format("token: %s Request is Prerendered",token));
             this.preRenderEventHandler = prerenderConfig.getEventHandler();
             if (beforeRender(servletRequest, servletResponse) || proxyPrerenderedPageResponse(token,servletRequest, servletResponse)) {
                 return true;
             }
         }
-        //System.out.println(String.format("token: %s Request is not Prerendered",token));
         log.trace(String.format("token: %s Request is not Prerendered",token));
+
         return false;
     }
 
-    private boolean shouldShowPrerenderedPage(String token, HttpServletRequest request) throws URISyntaxException {
-
+    protected boolean shouldShowPrerenderedPage(String token, HttpServletRequest request) throws URISyntaxException {
         final String userAgent = request.getHeader("User-Agent");
         final String url = getRequestURL(token, request);
         final String referer = request.getHeader("Referer");
@@ -386,7 +382,7 @@ public class PrerenderSeoService {
         });
     }
 
-    private boolean beforeRender(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected boolean beforeRender(HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (preRenderEventHandler != null) {
             final String html = preRenderEventHandler.beforeRender(request);
             if (isNotBlank(html)) {
@@ -400,14 +396,14 @@ public class PrerenderSeoService {
         return false;
     }
 
-    private boolean proxyPrerenderedPageResponse(String token, HttpServletRequest request, HttpServletResponse response)
-            throws IOException, URISyntaxException {
+    protected boolean proxyPrerenderedPageResponse(String token, HttpServletRequest request, HttpServletResponse response) throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(token, request));
         log.trace(String.format("token %s Prerender proxy will send request to:%s",token, apiUrl));
-        //System.out.println(String.format("token %s Prerender proxy will send request to:%s", token, apiUrl));
+
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(token,request, getMethod);
         withPrerenderToken(getMethod);
+
         //Added logic to set timeout on request
         withRequestConfig(getMethod);
         CloseableHttpResponse prerenderServerResponse = null;
@@ -420,12 +416,17 @@ public class PrerenderSeoService {
             html = afterRender(request, response, prerenderServerResponse, html);
             responseEntity(html, response);
             return true;
-        } finally {
+        }
+        catch (IOException ex) {
+            response.setStatus(504);
+            throw new IOException(ex);
+        }
+        finally {
             closeQuietly(prerenderServerResponse);
         }
     }
 
-    private String afterRender(HttpServletRequest clientRequest, HttpServletResponse clientResponse, CloseableHttpResponse prerenderServerResponse, String responseHtml) {
+    protected String afterRender(HttpServletRequest clientRequest, HttpServletResponse clientResponse, CloseableHttpResponse prerenderServerResponse, String responseHtml) {
         if (preRenderEventHandler != null) {
             return preRenderEventHandler.afterRender(clientRequest, clientResponse, prerenderServerResponse, responseHtml);
         }

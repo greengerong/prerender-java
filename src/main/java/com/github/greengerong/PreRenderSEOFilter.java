@@ -14,7 +14,7 @@ import java.util.Map;
 public class PreRenderSEOFilter implements Filter {
     public static final List<String> PARAMETER_NAMES = Lists.newArrayList("preRenderEventHandler", "proxy", "proxyPort",
             "prerenderToken", "forwardedURLHeader", "crawlerUserAgents", "extensionsToIgnore", "whitelist",
-            "blacklist", "prerenderServiceUrl", "protocol","pathsToIgnore","qsappend","requestTimeOut");
+            "blacklist", "prerenderServiceUrl", "protocol", "pathsToIgnore", "qsappend", "requestTimeOut", "socketTimeout");
     private PrerenderSeoService prerenderSeoService;
 
     @Override
@@ -23,21 +23,21 @@ public class PreRenderSEOFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         String token = java.util.UUID.randomUUID().toString();
 
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+
         try {
-            boolean isPrerendered = prerenderSeoService.prerenderIfEligible(
-                    (HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse,token );
+            boolean isPrerendered = prerenderSeoService.prerenderIfEligible(request, response, token);
             if (!isPrerendered) {
                 filterChain.doFilter(servletRequest, servletResponse);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(String.format("Token: %s Exception: %s \n StackTrace: \n%s",token, e.toString(), ArrayUtils.toString(e.getStackTrace())));
+            System.out.printf("Token: %s Exception: %s \n StackTrace: \n%s%n", token, e, ArrayUtils.toString(e.getStackTrace()));
         }
-
     }
 
     @Override
