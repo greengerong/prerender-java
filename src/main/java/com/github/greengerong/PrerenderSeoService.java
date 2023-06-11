@@ -336,7 +336,7 @@ public class PrerenderSeoService {
     private boolean proxyPrerenderedPageResponse(HttpServletRequest request, HttpServletResponse response)
             throws IOException, URISyntaxException {
         final String apiUrl = getApiUrl(getFullUrl(request));
-        log.trace(String.format("Prerender proxy will send request to:%s", apiUrl));
+        log.info(String.format("Prerender proxy will send request to:%s", apiUrl));
         final HttpGet getMethod = getHttpGet(apiUrl);
         copyRequestHeaders(request, getMethod);
         withPrerenderToken(getMethod);
