@@ -17,7 +17,7 @@ import com.google.common.collect.Maps;
 public class PreRenderSEOFilter implements Filter {
     public static final List<String> PARAMETER_NAMES = Lists.newArrayList("preRenderEventHandler", "proxy", "proxyPort",
             "prerenderToken", "forwardedURLHeader", "crawlerUserAgents", "extensionsToIgnore", "whitelist",
-            "blacklist", "prerenderServiceUrl", "protocol");
+            "blacklist", "prerenderServiceUrl", "protocol","socketTimeout");
     private PrerenderSeoService prerenderSeoService;
 
     @Override
