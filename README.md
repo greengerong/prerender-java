@@ -1,4 +1,4 @@
-Prerender Java [![Build Status](https://travis-ci.org/greengerong/prerender-java.png)](https://travis-ci.org/greengerong/prerender-java)
+Prerender Java 
 ===========================
 
 Are you using backbone, angular, emberjs, etc, but you're unsure about the SEO implications?
